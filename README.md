@@ -25,10 +25,13 @@ Three panes: **views** on the left, a dense **ranked list** in the middle, and t
 
 | View | What's in it |
 |---|---|
-| **Brief** | Claude's headline on the backlog, what's worth knowing, and the themes that explain most of it. |
-| **Urgent** | Severe bugs (crashes, corruption, regressions, security), threads active right now, and problems nobody from the team has answered. |
-| **Most wanted** | The requests the most people are asking for. |
-| **PRs to review** | Ready to merge, contributors waiting on a first review, small green fixes, competing PRs for the same issue. |
+| **Overview** | Claude's headline; counts that open their list (urgent, no team reply, contributors waiting, ready to merge, quick wins, noise); the top issues and PRs that need you, each with Claude's one-line read; what's worth knowing; and the themes that explain most of the backlog. |
+| **Needs you: Urgent issues** | Severe bugs (crashes, corruption, regressions, security), threads active right now, and problems nobody from the team has answered. |
+| **Needs you: PRs to review** | Ready to merge, contributors waiting on a first review, small green fixes, competing PRs for the same issue. |
+| **Needs you: Most wanted** | The requests the most people are asking for. |
+| **You may have missed: No team reply** | Every issue nobody from the team has answered yet (not only the short list), most pressing first. |
+| **You may have missed: Contributors waiting** | Outside PRs with no review from the team, longest wait first among equals. |
+| **Clean up: Quick wins** | Items Claude has already decided: closes, repro requests, nudges and merges that take one `y` each. |
 | **Duplicates** | Look-alike groups judged *duplicates*, *related* or *different*, with the one to keep marked. |
 | **Noise** | Usage questions, empty reports, stale threads, abandoned PRs, issues labelled invalid but still open. |
 | **Watch / Everything** | The rest: searchable and filterable by theme and label. |

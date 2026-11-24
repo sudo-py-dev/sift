@@ -87,8 +87,8 @@ svg.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-wid
 .icon-btn{width:34px;height:34px;display:grid;place-items:center;border-radius:var(--r1);border:0;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
 .icon-btn:hover{background:var(--hover);color:var(--text)}
 
-.main{display:grid;grid-template-columns:240px minmax(360px,1fr) minmax(440px,1.3fr);min-height:0}
-.main.reading{grid-template-columns:240px 1fr}
+.main{display:grid;grid-template-columns:252px minmax(360px,1fr) minmax(440px,1.3fr);min-height:0}
+.main.reading{grid-template-columns:252px 1fr}
 
 /* sidebar */
 .side{border-inline-end:1px solid var(--line);overflow:auto;padding:14px 10px 28px;background:var(--surface)}
@@ -101,6 +101,10 @@ svg.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-wid
 .nav .sw{width:8px;height:8px;border-radius:3px;justify-self:center}
 .nav .n{font:500 11.5px var(--mono);color:var(--faint);font-variant-numeric:tabular-nums}
 .nav kbd{display:none}
+.nav button:hover kbd{display:inline-block}
+.nav button:hover .n{display:none}
+.navh{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:600;margin:18px 12px 6px}
+.navsep{height:1px;background:var(--line);margin:12px 10px}
 .chiplist{display:flex;flex-direction:column;gap:1px}
 .chiplist button{all:unset;display:flex;justify-content:space-between;align-items:center;gap:8px;height:30px;padding:0 10px 0 12px;border-radius:var(--r1);cursor:pointer;color:var(--muted);font-size:13px;transition:background .12s,color .12s}
 .chiplist button:hover{background:var(--hover);color:var(--text)}
@@ -133,7 +137,13 @@ svg.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-wid
 .s-review{background:var(--review-soft);color:var(--review)}.s-noise{background:var(--noise-soft);color:var(--noise)}.s-plain{background:var(--surface-3);color:var(--muted)}
 .rt{font-weight:550;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:14px}
 .rt .num{font:12px var(--mono);color:var(--faint);margin-inline-end:7px;font-weight:400}
+.rbody{min-width:0}
+.rs{margin-top:3px;font-size:13px;line-height:1.45;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .rm{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:12px;color:var(--faint)}
+.next{display:inline-flex;align-items:center;height:22px;font-size:11.5px;font-weight:600;padding:0 8px;border-radius:6px;border:1px solid var(--line-2);color:var(--muted);white-space:nowrap}
+.next.warn{border-color:color-mix(in srgb,var(--urgent) 40%,transparent);color:var(--urgent)}
+.next.good{border-color:color-mix(in srgb,var(--review) 40%,transparent);color:var(--review)}
+.next.muted{color:var(--faint);border-style:dashed}
 .chip{display:inline-flex;align-items:center;font-size:11.5px;line-height:20px;padding:0 8px;border-radius:6px;background:var(--surface-3);color:var(--muted);white-space:nowrap;font-weight:500}
 .chip.hot{background:var(--wanted-soft);color:var(--wanted)}.chip.warn{background:var(--urgent-soft);color:var(--urgent)}
 .chip.good{background:var(--review-soft);color:var(--review)}.chip.noise{background:var(--noise-soft);color:var(--noise)}
@@ -259,9 +269,49 @@ svg.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-wid
 .form .hint{font-size:12px;color:var(--faint);margin-inline-end:auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 
 /* reading views (brief, queue) */
-.reading-pane{overflow:auto;padding:36px 44px 72px}
-.reading-pane .wrap{max-width:1000px}
+.reading-pane{overflow:auto;padding:32px 44px 72px}
+.reading-pane .wrap{max-width:1120px;margin-inline:auto}
 .hero{font-size:19px;line-height:1.6;margin:0 0 24px;max-width:72ch;letter-spacing:-.008em;font-weight:450}
+/* overview */
+.ov-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.ov-title{margin:0 0 4px;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.ov-head .dkicker{margin:0}
+.read{border-inline-start:3px solid var(--accent);background:var(--surface);border-radius:0 var(--r2) var(--r2) 0;padding:14px 20px 16px;margin-bottom:22px}
+.read .vh{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.09em;font-weight:650;margin-bottom:6px}
+.read p{margin:0;font-size:16px;line-height:1.6;max-width:78ch}
+.read.muted p{color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px;margin-bottom:26px}
+.stat{all:unset;cursor:pointer;display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r2);padding:12px 14px 13px;position:relative;overflow:hidden;transition:border-color .15s,background .15s}
+.stat::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--c,var(--line-2))}
+.stat:hover{border-color:var(--line-2);background:var(--surface-2)}
+.stat:focus-visible{outline:2px solid var(--focus)}
+.stat.urgent{--c:var(--urgent)}.stat.review{--c:var(--review)}.stat.info{--c:var(--info)}.stat.noise{--c:var(--noise)}
+.stat-l{font-size:12.5px;font-weight:600;color:var(--muted)}
+.stat b{font:650 26px/1.15 var(--mono);letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:var(--c)}
+.stat.noise b{color:var(--text)}
+.stat-c{font-size:12px;color:var(--faint)}
+.agendas{display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:16px;margin-bottom:8px}
+.agenda{background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);padding:6px 6px 8px;display:flex;flex-direction:column;min-width:0}
+.agenda header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 12px 6px}
+.agenda h3{margin:0;font-size:15px;font-weight:650;display:flex;align-items:center;gap:8px}
+.agenda .sw{width:8px;height:8px;border-radius:3px}
+.ag-hint{font-size:12px;color:var(--faint)}
+.ag-list{display:flex;flex-direction:column}
+.ag{all:unset;cursor:pointer;display:grid;grid-template-columns:58px 1fr auto;gap:10px;align-items:start;padding:10px 12px;border-radius:var(--r2);transition:background .12s}
+.ag + .ag{box-shadow:inset 0 1px 0 var(--line)}
+.ag:hover{background:var(--hover)}
+.ag:focus-visible{outline:2px solid var(--focus)}
+.ag-n{font-size:12.5px;color:var(--faint);padding-top:1px}
+.ag-b{display:flex;flex-direction:column;gap:3px;min-width:0}
+.ag-t{font-weight:600;font-size:14px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ag-s{font-size:13px;color:var(--muted);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ag-m{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;color:var(--faint);margin-top:3px}
+.ag-more{align-self:flex-start;margin:4px 6px 0}
+.ag-empty{padding:18px 12px;color:var(--faint)}
+.howto{margin-top:30px;color:var(--muted)}
+.howto summary{cursor:pointer;font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:650;padding:4px 0}
+.howto summary:hover{color:var(--text)}
+.howto .notes{margin-top:12px}
 .notes{margin:0 0 30px;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;max-width:78ch}
 .notes li{color:var(--muted);padding-inline-start:18px;position:relative}
 .notes li::before{content:"";position:absolute;inset-inline-start:2px;top:.66em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
@@ -278,7 +328,7 @@ svg.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-wid
 .theme:focus-visible{outline:2px solid var(--focus)}
 .theme b{font-size:14.5px;font-weight:600}
 .theme span{font-size:13px;color:var(--muted);line-height:1.5}
-.theme .refs{font:12px var(--mono);color:var(--faint)}
+.theme .refs{display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--faint);margin-top:auto;padding-top:4px}
 .h2{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);margin:32px 0 12px;font-weight:650}
 .qtable{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);overflow:hidden}
 .qtable th{text-align:start;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:650;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
@@ -308,8 +358,85 @@ dialog::backdrop{background:rgba(5,5,10,.5);backdrop-filter:blur(3px)}
 .keys div{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--muted)}
 .keys h6{grid-column:1/-1;margin:12px 0 2px;font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);font-weight:650}
 
+
+/* ---------- polish: icons, rhythm, motion ---------- */
+:root{--ease:cubic-bezier(.2,.8,.2,1)}
+.btn,.icon-btn,.act,.tile,.theme,.stat,.ag,.row,.nav button,.chiplist button{transition-timing-function:var(--ease)}
+.btn svg.ic{width:15px;height:15px}
+.top{gap:12px;padding:0 12px 0 18px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:saturate(1.4) blur(8px)}
+.icon-btn svg.ic{width:17px;height:17px}
+
+/* sidebar */
+.side{padding:10px 10px 28px}
+.nav{gap:1px}
+.nav button{grid-template-columns:18px 1fr auto;gap:11px;height:34px;padding:0 10px;border-radius:9px}
+.nic{display:grid;place-items:center;color:var(--vc);opacity:.8;transition:opacity .15s var(--ease)}
+.nic svg.ic{width:16px;height:16px}
+.nav button:hover .nic{opacity:1}
+.nav button[aria-current=true]{background:var(--accent-soft);color:var(--text);font-weight:600}
+.nav button[aria-current=true] .nic{opacity:1}
+.nav button[aria-current=true] .n{color:var(--text)}
+.nav .n{min-width:24px;text-align:end}
+.nav .nt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navh,.side h3{font-size:10.5px;letter-spacing:.1em;margin:20px 12px 6px;font-weight:650}
+.navsep{margin:14px 10px}
+.chiplist button{height:30px;border-radius:8px}
+
+/* list */
+.listhead{padding:16px 20px 12px}
+.list{padding:4px 8px 20px}
+.row{padding:14px 12px;margin-top:0;gap:12px;box-shadow:inset 0 1px 0 var(--line)}
+.row:first-child,.row:hover,.row:hover + .row,.row[aria-selected=true] + .row,.cluster-h + .row{box-shadow:none}
+.row[aria-selected=true]{box-shadow:inset 0 0 0 1px var(--line-2)}
+.row.decided{opacity:.72}
+.rt{font-weight:600}
+.rm{gap:8px;margin-top:8px}
+.mi{display:inline-flex;align-items:center;gap:4px;font-variant-numeric:tabular-nums}
+.mi svg.ic{width:13px;height:13px;stroke-width:2;opacity:.75}
+.dmeta .mi svg.ic{width:14px;height:14px}
+
+/* detail */
+.dscroll{padding:30px 36px 40px}
+.verdict{margin-top:22px}
+.meters{margin:18px 0 0}
+
+/* overview */
+.stat{padding:14px 16px 15px;gap:2px;border-radius:14px}
+.stat::before{display:none}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow-sm);border-color:color-mix(in srgb,var(--c) 35%,var(--line))}
+.stat-h{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.stat .stat-l{color:var(--text);font-size:13px;margin-top:2px}
+.stat-i,.hic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:none;background:color-mix(in srgb,var(--c,var(--vc)) 14%,transparent);color:var(--c,var(--vc))}
+.stat-i svg.ic,.hic svg.ic{width:15px;height:15px}
+.stat .stat-go{margin-inline-start:auto;width:14px;height:14px;color:var(--faint);opacity:0;transform:translateX(-4px);transition:opacity .15s var(--ease),transform .15s var(--ease)}
+.stat:hover .stat-go{opacity:1;transform:none}
+.stat b{font-size:28px}
+.agendas{gap:18px}
+.agenda{padding:6px 6px 10px}
+.agenda header{padding:12px 12px 8px}
+.agenda h3{gap:10px}
+.ag{padding:12px}
+.ag-more{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin:8px 12px 2px;font-size:13px;font-weight:600;color:var(--accent);border-radius:6px}
+.ag-more svg.ic{width:14px;height:14px;transition:transform .15s var(--ease)}
+.ag-more:hover svg.ic{transform:translateX(3px)}
+.ag-more:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.theme:hover{transform:translateY(-2px)}
+.read{margin-bottom:20px}
+
+/* motion: content settles in; nothing moves when the user prefers less motion */
+@keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.reading-pane .wrap > *{animation:rise .32s var(--ease) both}
+.reading-pane .wrap > :nth-child(2){animation-delay:.03s}
+.reading-pane .wrap > :nth-child(3){animation-delay:.06s}
+.reading-pane .wrap > :nth-child(4){animation-delay:.09s}
+.reading-pane .wrap > :nth-child(n+5){animation-delay:.12s}
+.dscroll{animation:fade .16s var(--ease) both}
+.form{animation:rise .2s var(--ease) both}
+.toast{transition:opacity .2s var(--ease),transform .2s var(--ease)}
+
 @media (max-width:1100px){.main{grid-template-columns:210px 1fr}.main .detail{display:none}.main.detail-open{grid-template-columns:210px 0 1fr}.main.detail-open .listpane{display:none}.main.detail-open .detail{display:flex}}
-@media (max-width:720px){.main,.main.detail-open{grid-template-columns:1fr}.side{display:none}.search{display:none}.dscroll{padding:20px}}
+@media (max-width:720px){.main,.main.detail-open,.main.reading{grid-template-columns:1fr}.side{display:none}.search{display:none}.dscroll{padding:20px}.reading-pane{padding:22px 18px 56px}.agendas{grid-template-columns:1fr}.ag{grid-template-columns:48px 1fr}.ag > .tag,.ag > .next{grid-column:2;justify-self:start}.top .save{display:none}}
 </style>
 </head>
 <body>
@@ -324,7 +451,7 @@ dialog::backdrop{background:rgba(5,5,10,.5);backdrop-filter:blur(3px)}
     </div>
     <span class="spacer"></span>
     <span class="save" id="save" role="status" aria-live="polite"><span class="dot"></span><span id="saveText"></span></span>
-    <button class="btn" id="queueBtn" title="Queued actions (q)">Queue <span class="count" id="qcount">0</span></button>
+    <button class="btn" id="queueBtn" title="Queued actions (q)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6l2 2 4-4M3 17l2 2 4-4M13 6h8M13 12h8M13 18h8"/></svg>Queue <span class="count" id="qcount">0</span></button>
     <button class="icon-btn" id="theme" aria-label="Switch light or dark theme" title="Theme (t)">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
     </button>
@@ -342,7 +469,7 @@ dialog::backdrop{background:rgba(5,5,10,.5);backdrop-filter:blur(3px)}
     </nav>
     <section class="listpane" aria-label="Items">
       <div class="listhead"><div><h2 id="viewTitle"></h2><div class="sub" id="viewSub"></div></div><span class="spacer" style="flex:1"></span>
-        <select id="sort" aria-label="Sort"><option value="rank">Rank</option><option value="reactions">Most 👍</option><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="quiet">Longest quiet</option></select>
+        <select id="sort" aria-label="Sort"><option value="rank">Rank</option><option value="reactions">Most reactions</option><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="quiet">Longest quiet</option></select>
       </div>
       <div class="filterbar" id="filters"></div>
       <div class="list" id="list" role="listbox" tabindex="0" aria-label="Items"></div>
@@ -391,6 +518,53 @@ const h = (tag, props = {}, ...kids) => {
   for (const c of kids.flat(Infinity)) if (c != null && c !== false) n.append(c instanceof Node ? c : String(c));
   return n;
 };
+// ---------- icons (one set, 1.75 stroke) ----------
+const ICONS = {
+  overview: 'M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z',
+  urgent: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v4M12 16h.01',
+  pr: 'M18 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM13 6h3a2 2 0 0 1 2 2v7M6 9v12',
+  flame: 'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.4-.5-2-1-3-1.1-2.1-.2-4 2-6 .5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.2.4-2.3 1-3a2.5 2.5 0 0 0 2.5 2.5z',
+  unanswered: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2zM9.5 8.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5M12 14.5h.01',
+  clock: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+  checks: 'M18 6 7 17l-5-5M22 10l-7.5 7.5L13 16',
+  mute: 'M11 5 6 9H2v6h4l5 4zM22 9l-6 6M16 9l6 6',
+  inbox: 'M22 12h-6l-2 3h-4l-2-3H2M5.5 5.1 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z',
+  queue: 'M3 6l2 2 4-4M3 17l2 2 4-4M13 6h8M13 12h8M13 18h8',
+  thumb: 'M7 10v12M15 5.9 14 10h5.8a2 2 0 0 1 1.9 2.6l-2.3 8a2 2 0 0 1-1.9 1.4H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.8a2 2 0 0 0 1.8-1.1L12 2a3.1 3.1 0 0 1 3 3.9z',
+  users: 'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8',
+  chat: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z',
+  arrow: 'M5 12h14M13 6l6 6-6 6',
+  layers: 'M12 2 2 7l10 5 10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+  sun: 'M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4',
+  moon: 'M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z',
+  help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01',
+  search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5',
+  hash: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18',
+  close: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6',
+  duplicate: 'M9 9h10v10H9zM5 15V5h10',
+  comment: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z',
+  'needs-repro': 'M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3M7.5 14h9',
+  nudge: 'M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 20a2 2 0 0 0 3.4 0',
+  label: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01',
+  keep: 'M20 6 9 17l-5-5',
+  watch: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+  escalate: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
+  approve: 'M22 11.1V12a10 10 0 1 1-5.9-9.1M22 4 12 14l-3-3',
+  merge: 'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9',
+  external: 'M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',
+  undo: 'M3 7v6h6M21 17a9 9 0 0 0-15-6.7L3 13',
+  sparkle: 'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z',
+  files: 'M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M9 15l2 2 4-4',
+};
+function icon(name, cls = '') {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'ic' + (cls ? ' ' + cls : '')); s.setAttribute('aria-hidden', 'true');
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', ICONS[name] || ICONS.comment);
+  s.append(p);
+  return s;
+}
+
 const safeUrl = (u) => (/^https:\/\/github\.com\//.test(u || '') ? u : '#');
 const ago = (d) => d < 1 ? 'today' : d < 2 ? '1 day' : d < 60 ? `${Math.round(d)} days` : d < 730 ? `${Math.round(d / 30)} mo` : `${(d / 365).toFixed(1)} yr`;
 const daysSince = (iso) => (Date.now() - new Date(iso)) / 864e5;
@@ -407,7 +581,9 @@ D.clusters.forEach((c, i) => c.members.forEach((n) => clusterOf.set(n, i)));
 const root = document.documentElement;
 const savedTheme = localStorage.getItem('sift:theme');
 root.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-const toggleTheme = () => { root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light'; localStorage.setItem('sift:theme', root.dataset.theme); };
+const syncThemeIcon = () => { const b = $('#theme'); b.textContent = ''; b.append(icon(root.dataset.theme === 'light' ? 'moon' : 'sun')); };
+const toggleTheme = () => { root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light'; localStorage.setItem('sift:theme', root.dataset.theme); syncThemeIcon(); };
+syncThemeIcon();
 $('#theme').onclick = toggleTheme;
 
 // ---------- decisions (queue) ----------
@@ -493,16 +669,29 @@ function effective(x) {
 }
 
 // ---------- views ----------
+// Signals the views and the overview read. Scores and signals come from scoring.mjs; verdicts from Claude.
+const sigOf = (x, re) => x.signals.find((s) => re.test(s.t));
+const UNANSWERED = /^no (maintainer|recent team) reply$/;
+const daysIn = (s) => Number((/(\d+) days?/.exec(s?.t || '') || [])[1] || 0);
+const waitDays = (x) => daysIn(sigOf(x, /^contributor waiting/));
+const CLOSE_ACTIONS = new Set(['close-duplicate', 'close-stale', 'close-not-planned', 'close-completed', 'close']);
+const QUICK_ACTIONS = new Set([...CLOSE_ACTIONS, 'needs-repro', 'nudge-author', 'merge']);
+const isQuick = (x) => QUICK_ACTIONS.has(x.verdict?.action) && !(x.verdict.action === 'merge' && x.status !== 'ready');
+const isUnanswered = (x) => x.kind === 'issue' && x.bucket !== 'noise' && !!sigOf(x, UNANSWERED) && !CLOSE_ACTIONS.has(x.verdict?.action);
+const isWaiting = (x) => x.kind === 'pr' && x.status !== 'draft' && !!sigOf(x, /^contributor waiting/);
 const VIEWS = [
-  { id: 'brief', name: 'Brief', color: 'var(--accent)', reading: true },
-  { id: 'urgent', name: 'Urgent', color: 'var(--urgent)', test: (x) => x.kind === 'issue' && x.bucket === 'attention' && x.lane === 'urgent', rank: (x) => x.urgency, sub: 'Severe, active now, or unanswered by the team' },
-  { id: 'wanted', name: 'Most wanted', color: 'var(--wanted)', test: (x) => x.kind === 'issue' && x.bucket === 'attention' && x.lane !== 'urgent', rank: (x) => x.demand, sub: 'What the most people are asking for' },
-  { id: 'prs', name: 'PRs to review', color: 'var(--review)', test: (x) => x.kind === 'pr' && x.bucket === 'attention', rank: (x) => (x.status === 'ready' ? 100 : 0) + x.attention, sub: 'Ready to merge, contributors waiting, fixes for hot issues' },
-  { id: 'dupes', name: 'Duplicates', color: 'var(--info)', sub: 'Look-alike issues; the one to keep is marked' },
-  { id: 'noise', name: 'Noise', color: 'var(--noise)', test: (x) => x.bucket === 'noise', rank: (x) => x.noise * 1000 - x.idle, sub: 'Probably not worth a maintainer’s time as it stands' },
-  { id: 'watch', name: 'Watch', color: 'var(--faint)', test: (x) => x.bucket === 'watch', rank: (x) => x.attention, sub: 'Real, but not pressing' },
-  { id: 'all', name: 'Everything', color: 'var(--line-2)', test: () => true, rank: (x) => x.attention, sub: 'Every fetched issue and PR' },
-  { id: 'queue', name: 'Queue', color: 'var(--accent)', reading: true },
+  { id: 'brief', ic: 'overview', name: 'Overview', color: 'var(--accent)', reading: true },
+  { id: 'urgent', ic: 'urgent', group: 'Needs you', name: 'Urgent issues', color: 'var(--urgent)', test: (x) => x.kind === 'issue' && x.bucket === 'attention' && x.lane === 'urgent', rank: (x) => x.urgency, sub: 'Severe, active now, or unanswered by the team' },
+  { id: 'prs', ic: 'pr', name: 'PRs to review', color: 'var(--review)', test: (x) => x.kind === 'pr' && x.bucket === 'attention', rank: (x) => (x.status === 'ready' ? 100 : 0) + x.attention, sub: 'Ready to merge, contributors waiting, fixes for hot issues' },
+  { id: 'wanted', ic: 'flame', name: 'Most wanted', color: 'var(--wanted)', test: (x) => x.kind === 'issue' && x.bucket === 'attention' && x.lane !== 'urgent', rank: (x) => x.demand, sub: 'What the most people are asking for' },
+  { id: 'unanswered', ic: 'unanswered', group: 'You may have missed', name: 'No team reply', color: 'var(--urgent)', test: isUnanswered, rank: (x) => x.urgency * 1000 + x.idle, sub: 'Issues where nobody from the team has answered yet, most pressing first' },
+  { id: 'waiting', ic: 'clock', name: 'Contributors waiting', color: 'var(--review)', test: isWaiting, rank: (x) => x.attention * 1000 + waitDays(x), sub: 'Outside PRs with no review from the team yet' },
+  { id: 'cleanup', ic: 'checks', group: 'Clean up', name: 'Quick wins', color: 'var(--info)', test: isQuick, rank: (x) => (CLOSE_ACTIONS.has(x.verdict.action) ? 1000 : 0) + x.noise, sub: 'Claude already decided these: one key (y) each to close, ask for info or nudge' },
+  { id: 'dupes', ic: 'duplicate', name: 'Duplicates', color: 'var(--info)', sub: 'Look-alike issues; the one to keep is marked' },
+  { id: 'noise', ic: 'mute', name: 'Noise', color: 'var(--noise)', test: (x) => x.bucket === 'noise', rank: (x) => x.noise * 1000 - x.idle, sub: 'Probably not worth a maintainer’s time as it stands' },
+  { id: 'watch', ic: 'watch', group: 'Browse', name: 'Watch', color: 'var(--faint)', test: (x) => x.bucket === 'watch', rank: (x) => x.attention, sub: 'Real, but not pressing' },
+  { id: 'all', ic: 'inbox', name: 'Everything', color: 'var(--line-2)', test: () => true, rank: (x) => x.attention, sub: 'Every fetched issue and PR' },
+  { id: 'queue', ic: 'queue', group: '', name: 'Queue', color: 'var(--accent)', reading: true },
 ];
 const V = Object.fromEntries(VIEWS.map((v) => [v.id, v]));
 const state = { view: 'brief', id: null, q: '', label: '', theme: -1, sort: 'rank', limit: 120 };
@@ -526,7 +715,8 @@ function writeHash() {
 
 const navBtns = new Map();
 VIEWS.forEach((v, i) => {
-  const b = h('button', { 'data-v': v.id, onclick: () => go(v.id) }, h('span', { class: 'sw', style: `background:${v.color}` }), h('span', { text: v.name }), h('span', { class: 'n' }), h('kbd', { text: i + 1 }));
+  if (v.group != null) $('#nav').append(v.group ? h('div', { class: 'navh', text: v.group }) : h('div', { class: 'navsep', role: 'separator' }));
+  const b = h('button', { 'data-v': v.id, onclick: () => go(v.id), title: i < 9 ? `${v.name} · ${i + 1}` : v.name }, h('span', { class: 'nic', style: `--vc:${v.color}` }, icon(v.ic)), h('span', { class: 'nt', text: v.name }), h('span', { class: 'n' }), i < 9 ? h('kbd', { text: i + 1 }) : null);
   navBtns.set(v.id, b);
   $('#nav').append(b);
 });
@@ -589,10 +779,17 @@ function rowEl(x, i) {
   const top = x.signals.filter((s) => s.tone !== 'info').slice(0, 3);
   return h('div', { class: 'row' + (store.decisions[x.key] ? ' decided' : ''), role: 'option', id: 'r-' + x.key, 'data-k': x.key, 'aria-selected': String(state.id === x.key), onclick: () => select(x.key) },
     cb, scoreCell(x),
-    h('div', {},
+    h('div', { class: 'rbody' },
       h('div', { class: 'rt', dir: 'auto' }, h('span', { class: 'num', text: (x.kind === 'pr' ? '!' : '#') + x.number }), x.title),
-      h('div', { class: 'rm' }, top.map((s) => h('span', { class: `chip ${s.tone}`, title: s.why, text: s.t })), h('span', { text: `${ago(x.idle)} quiet` }), x.reactions ? h('span', { text: `· ${fmt(x.reactions)} 👍` }) : null)),
-    decisionTag(x));
+      x.verdict?.summary ? h('div', { class: 'rs', dir: 'auto', text: x.verdict.summary }) : null,
+      h('div', { class: 'rm' }, top.map((s) => h('span', { class: `chip ${s.tone}`, title: s.why, text: s.t })), h('span', { class: 'mi', title: 'Last activity' }, icon('clock'), ago(x.idle)), x.reactions ? h('span', { class: 'mi', title: 'Reactions' }, icon('thumb'), fmt(x.reactions)) : null, x.commentCount ? h('span', { class: 'mi', title: 'Comments' }, icon('chat'), fmt(x.commentCount)) : null)),
+    decisionTag(x) || nextTag(x));
+}
+// Claude's suggested next step, shown on rows that have no queued action yet.
+const NEXT = { fix: ['Fix', 'warn'], investigate: ['Investigate', 'warn'], respond: ['Reply', 'warn'], review: ['Review', 'good'], merge: ['Merge', 'good'], 'needs-repro': ['Ask repro', ''], 'nudge-author': ['Nudge', ''], 'close-duplicate': ['Close: dup', 'muted'], 'close-stale': ['Close: stale', 'muted'], 'close-not-planned': ['Close', 'muted'], 'close-completed': ['Close: fixed', 'muted'], close: ['Close', 'muted'], 'keep-watching': ['Watch', 'muted'], label: ['Label', 'muted'] };
+function nextTag(x) {
+  const n = NEXT[x.verdict?.action];
+  return n ? h('span', { class: `next ${n[1]}`, title: 'Claude’s suggested next step (press y to accept)', text: n[0] }) : null;
 }
 let listCache = [];
 function renderList() {
@@ -674,33 +871,6 @@ const SUGGEST_LABEL = { duplicate: (f) => `Close as duplicate${f.of ? ` of #${f.
 
 function meter(label, value, color, shown) { return h('div', { class: 'meter' }, h('div', { class: 'k' }, label, h('b', { text: shown ?? value })), h('div', { class: 'bar' }, h('i', { style: `width:${Math.max(2, value)}%;background:${color}` }))); }
 function jumpBtn(x, note) { return h('button', { onclick: () => { if (!listCache.some((y) => y.key === x.key)) { state.view = 'all'; state.q = ''; $('#q').value = ''; state.theme = -1; state.label = ''; renderList(); renderFilters(); syncNav(); } select(x.key); } }, h('span', { class: 'num', text: (x.kind === 'pr' ? '!' : '#') + x.number }), h('span', { dir: 'auto', text: x.title }), note ? h('span', { class: 'num', text: note }) : null); }
-
-// ---------- icons (one set, 1.75 stroke) ----------
-const ICONS = {
-  close: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6',
-  duplicate: 'M9 9h10v10H9zM5 15V5h10',
-  comment: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z',
-  'needs-repro': 'M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3M7.5 14h9',
-  nudge: 'M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 20a2 2 0 0 0 3.4 0',
-  label: 'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01',
-  keep: 'M20 6 9 17l-5-5',
-  watch: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
-  escalate: 'M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z',
-  approve: 'M22 11.1V12a10 10 0 1 1-5.9-9.1M22 4 12 14l-3-3',
-  merge: 'M6 3v12M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 9a9 9 0 0 1-9 9',
-  external: 'M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6',
-  undo: 'M3 7v6h6M21 17a9 9 0 0 0-15-6.7L3 13',
-  sparkle: 'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 17l.8 2.2L22 20l-2.2.8L19 23l-.8-2.2L16 20l2.2-.8z',
-  files: 'M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M9 15l2 2 4-4',
-};
-function icon(name) {
-  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('class', 'ic'); s.setAttribute('aria-hidden', 'true');
-  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', ICONS[name] || ICONS.comment);
-  s.append(p);
-  return s;
-}
 
 // ---------- markdown → DOM (built node by node, never parsed as HTML: issue text is untrusted) ----------
 function mdInline(text, out) {
@@ -834,15 +1004,15 @@ function renderDetail() {
     h('div', { class: 'dmeta' },
       h('span', { text: `${x.author}${x.assoc && x.assoc !== 'NONE' ? ` (${x.assoc.toLowerCase().replace(/_/g, ' ')})` : ''}` }),
       h('span', { text: `opened ${ago(x.age)} ago` }), h('span', { text: `active ${ago(x.idle)} ago` }),
-      h('span', { text: `${fmt(x.commentCount)} comments` }), h('span', { text: `${fmt(x.reactions)} 👍` }), h('span', { text: `${fmt(x.participants)} people` }),
+      h('span', { class: 'mi' }, icon('chat'), `${fmt(x.commentCount)} comments`), h('span', { class: 'mi' }, icon('thumb'), fmt(x.reactions)), h('span', { class: 'mi' }, icon('users'), `${fmt(x.participants)} people`),
       x.kind === 'pr' ? h('span', { class: 'mono', text: `+${fmt(x.additions)} −${fmt(x.deletions)}` }) : null,
       x.kind === 'pr' ? h('span', { text: `checks ${String(x.checks || '').toLowerCase()}` }) : null,
       x.milestone ? h('span', { text: `milestone ${x.milestone}` }) : null),
     h('div', { class: 'dlinks' }, h('a', { class: 'btn', href: safeUrl(x.url), target: '_blank', rel: 'noopener noreferrer' }, icon('external'), 'Open on GitHub', h('kbd', { text: 'o' })), x.kind === 'pr' ? h('a', { class: 'btn ghost', href: safeUrl(x.url) + '/files', target: '_blank', rel: 'noopener noreferrer' }, icon('files'), 'Files changed') : null, d?.status === 'pending' ? h('button', { class: 'btn ghost', onclick: () => unqueue(x.key) }, icon('undo'), 'Remove from queue', h('kbd', { text: 'z' })) : null),
-    h('div', { class: 'meters' }, x.kind === 'pr'
-      ? [meter('Review priority', x.attention, 'var(--review)'), meter('Size', Math.min(100, Math.round(Math.log10(1 + (x.size || 0)) * 25)), 'var(--info)', `${fmt(x.size)} lines`), meter('Noise', x.noise, 'var(--noise)')]
-      : [meter('Urgency', x.urgency, 'var(--urgent)'), meter('Demand', x.demand, 'var(--wanted)'), meter('Noise', x.noise, 'var(--noise)')]),
   );
+  const meters = h('div', { class: 'meters' }, x.kind === 'pr'
+    ? [meter('Review priority', x.attention, 'var(--review)'), meter('Size', Math.min(100, Math.round(Math.log10(1 + (x.size || 0)) * 25)), 'var(--info)', `${fmt(x.size)} lines`), meter('Noise', x.noise, 'var(--noise)')]
+    : [meter('Urgency', x.urgency, 'var(--urgent)'), meter('Demand', x.demand, 'var(--wanted)'), meter('Noise', x.noise, 'var(--noise)')]);
   const inj = x.signals.find((g) => /injection|hidden text/.test(g.t));
   if (inj) sc.append(h('div', { class: 'warnbox', role: 'note' }, icon('escalate'), h('div', {}, h('b', { text: inj.t === 'hidden text' ? 'Hidden text removed. ' : 'Contains text aimed at AI tools. ' }), inj.why, ' Sift never acts on text from issues; only your queued actions are applied, after you confirm.')));
   if (v.summary || v.why) {
@@ -855,6 +1025,7 @@ function renderDetail() {
       v.action === 'review' && x.kind === 'pr' ? h('div', { class: 'suggest' }, h('a', { class: 'btn primary', href: safeUrl(x.url) + '/files', target: '_blank', rel: 'noopener noreferrer' }, icon('files'), 'Review the changes', h('kbd', { text: 'y' })), h('span', { text: 'Then approve (a), merge (g) or comment (m) here.' })) : null,
       can ? h('div', { class: 'suggest' }, h('button', { class: 'btn primary', onclick: () => acceptSuggestion(x) }, icon(sug[0]), SUGGEST_LABEL[sug[0]](sug[1]), h('kbd', { text: 'y' })), h('span', { text: 'You review the text before it is queued.' })) : null));
   }
+  sc.append(meters);
   sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Why it’s here' }), h('div', { class: 'reasons' }, x.signals.length ? x.signals.map((s) => h('div', { class: 'reason' }, h('span', { class: `chip ${s.tone}`, text: s.t }), h('span', { text: s.why }))) : h('span', { style: 'color:var(--faint)', text: 'No strong signals either way.' }))));
   if (x.labels.length) sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Labels' }), h('div', { class: 'labels' }, x.labels.map((l) => h('span', { class: 'label', text: l })))));
   // Related: duplicates, linked PRs, issues this PR closes.
@@ -998,18 +1169,63 @@ function renderBrief() {
   pane.textContent = '';
   const b = D.brief || {};
   const eff = ITEMS.map(effective);
-  const n = (id) => eff.filter(V[id].test).length;
-  const tile = (id, label, color) => h('button', { class: 'tile', onclick: () => go(id) }, h('b', { style: `color:${color}`, text: fmt(id === 'dupes' ? D.clusters.length : n(id)) }), h('span', { text: label }));
+  const list = (id) => eff.filter(V[id].test).sort((p, q) => V[id].rank(q) - V[id].rank(p));
+  const L = Object.fromEntries(['urgent', 'prs', 'unanswered', 'waiting', 'cleanup', 'noise'].map((id) => [id, list(id)]));
+  const open = (id, key) => { state.view = id; state.limit = 120; selection.clear(); state.id = key || null; render(); if (key) select(key); $('#list').focus({ preventScroll: true }); };
+  const maxOf = (arr, f) => arr.reduce((m, x) => Math.max(m, f(x)), 0);
+  const ready = eff.filter((x) => x.kind === 'pr' && x.status === 'ready').length;
+  const urgentSilent = L.urgent.filter((x) => sigOf(x, UNANSWERED)).length;
+
+  // Stat tiles: each one is a list you can open, with the fact that makes it matter.
+  const stat = (id, value, label, caption, tone) => h('button', { class: `stat ${tone}`, onclick: () => open(id) },
+    h('span', { class: 'stat-h' }, h('span', { class: 'stat-i' }, icon(V[id].ic)), icon('arrow', 'stat-go')),
+    h('b', { text: fmt(value) }), h('span', { class: 'stat-l', text: label }), h('span', { class: 'stat-c', text: caption }));
+  const stats = h('div', { class: 'stats' },
+    stat('urgent', L.urgent.length, 'Urgent issues', urgentSilent ? `${urgentSilent} with no team reply` : 'all have a team reply', 'urgent'),
+    stat('unanswered', L.unanswered.length, 'No team reply', L.unanswered.length ? `oldest waiting ${ago(maxOf(L.unanswered, (x) => x.age))}` : 'every issue has an answer', 'urgent'),
+    stat('waiting', L.waiting.length, 'Contributors waiting', L.waiting.length ? `longest wait ${ago(maxOf(L.waiting, waitDays))}` : 'no one is waiting', 'review'),
+    stat('prs', ready, 'Ready to merge', 'approved, green, no conflicts', 'review'),
+    stat('cleanup', L.cleanup.length, 'Quick wins', 'closes and replies Claude prepared', 'info'),
+    stat('noise', L.noise.length, 'Noise', `${Math.round((100 * L.noise.length) / Math.max(1, ITEMS.length))}% of what was fetched`, 'noise'));
+
+  // The agenda: the handful of items to open first, with Claude's one-line read.
+  const agendaRow = (x, id) => {
+    const warn = x.kind === 'pr'
+      ? (x.status === 'ready' ? 'ready to merge' : waitDays(x) ? `waiting ${ago(waitDays(x))}` : x.status)
+      : sigOf(x, UNANSWERED) ? `no team reply · ${ago(x.age)}` : (x.signals.find((s) => s.tone === 'warn' || s.tone === 'hot')?.t || '');
+    return h('button', { class: 'ag', onclick: () => open(id, x.key) },
+      h('span', { class: 'ag-n mono', text: (x.kind === 'pr' ? '!' : '#') + x.number }),
+      h('span', { class: 'ag-b' },
+        h('span', { class: 'ag-t', dir: 'auto', text: x.title }),
+        x.verdict?.summary ? h('span', { class: 'ag-s', dir: 'auto', text: x.verdict.summary }) : null,
+        h('span', { class: 'ag-m' }, warn ? h('span', { class: 'chip ' + (x.kind === 'pr' ? 'good' : 'warn'), text: warn }) : null, x.reactions ? h('span', { class: 'mi' }, icon('thumb'), fmt(x.reactions)) : null, h('span', { class: 'mi' }, icon('users'), fmt(x.participants)))),
+      decisionTag(x) || nextTag(x));
+  };
+  const agenda = (id, title, hint, items) => h('section', { class: 'agenda' },
+    h('header', {}, h('h3', {}, h('span', { class: 'hic', style: `--vc:${V[id].color}` }, icon(V[id].ic)), title), h('span', { class: 'ag-hint', text: hint })),
+    items.length ? h('div', { class: 'ag-list' }, items.slice(0, 6).map((x) => agendaRow(x, id))) : h('div', { class: 'ag-empty', text: 'Nothing here. Nice.' }),
+    items.length > 6 ? h('button', { class: 'ag-more', onclick: () => open(id) }, `See all ${fmt(items.length)}`, icon('arrow')) : null);
+
   const wrap = h('div', { class: 'wrap' },
-    h('div', { class: 'dkicker', text: `${fmt(D.repo.totals?.openIssues)} open issues · ${fmt(D.repo.totals?.openPRs)} open PRs · fetched ${ago(daysSince(D.repo.fetchedAt))} ago${D.repo.partial ? ` · analysed the ${fmt(D.repo.fetched.issues)} most recently active issues` : ''}` }),
-    b.headline ? h('p', { class: 'hero', dir: 'auto', text: b.headline }) : h('p', { class: 'hero', style: 'color:var(--muted)', text: 'Scores only: no written brief yet. Ask Claude to finish the triage to add a headline, themes and suggested actions.' }),
-    h('div', { class: 'tiles' }, tile('urgent', 'urgent issues', 'var(--urgent)'), tile('wanted', 'most-wanted requests', 'var(--wanted)'), tile('prs', 'PRs to review', 'var(--review)'), tile('dupes', 'duplicate groups', 'var(--info)'), tile('noise', 'noise', 'var(--noise)')),
-    b.notes?.length ? [h('div', { class: 'h2', text: 'Worth knowing' }), h('ul', { class: 'notes' }, b.notes.map((t) => h('li', { dir: 'auto', text: t })))] : null,
-    themes.length ? [h('div', { class: 'h2', text: 'Themes' }), h('div', { class: 'themes' }, themes.map((t, i) => h('button', { class: 'theme', onclick: () => { state.theme = i; state.view = 'all'; render(); } }, h('b', { dir: 'auto', text: t.title }), h('span', { dir: 'auto', text: t.summary || '' }), h('span', { class: 'refs', text: (t.items || []).slice(0, 8).map((r) => '#' + String(r).replace(/\D/g, '')).join('  ') }))))] : null,
-    h('div', { class: 'h2', text: 'How to use this' }),
-    h('ul', { class: 'notes' }, h('li', {}, 'Open a list, move with ', h('kbd', { text: 'j' }), ' ', h('kbd', { text: 'k' }), ', and queue actions with one key: ', h('kbd', { text: 'y' }), ' accepts Claude’s suggestion, ', h('kbd', { text: 'c' }), ' closes, ', h('kbd', { text: 'd' }), ' marks a duplicate, ', h('kbd', { text: 's' }), ' keeps something marked as noise.'),
-      h('li', { text: 'Select several with x to act on all of them at once.' }),
-      h('li', {}, 'Nothing changes on GitHub from this page. When you’re done, run ', h('code', { text: `/sift:apply ${slug}` }), ' in Claude Code: it shows every command and waits for your yes.')));
+    h('div', { class: 'ov-head' },
+      h('div', {}, h('h1', { class: 'ov-title', text: slug }),
+        h('div', { class: 'dkicker', text: `${fmt(D.repo.totals?.openIssues)} open issues · ${fmt(D.repo.totals?.openPRs)} open PRs · fetched ${ago(daysSince(D.repo.fetchedAt))} ago${D.repo.partial ? ` · analysed the ${fmt(D.repo.fetched.issues)} most recently active issues` : ''}` })),
+      pendingCount() ? h('button', { class: 'btn primary', onclick: () => go('queue') }, `Review ${pendingCount()} queued`, h('kbd', { text: 'q' })) : h('button', { class: 'btn primary', onclick: () => open('urgent') }, 'Start with urgent', h('kbd', { text: '2' }))),
+    b.headline
+      ? h('div', { class: 'read' }, h('div', { class: 'vh' }, icon('sparkle'), 'Claude’s read'), h('p', { dir: 'auto', text: b.headline }))
+      : h('div', { class: 'read muted' }, h('p', { text: 'Scores only: no written brief yet. Ask Claude to finish the triage to add a headline, themes and suggested actions.' })),
+    stats,
+    h('div', { class: 'agendas' },
+      agenda('urgent', 'Issues that need you', 'most severe first', L.urgent),
+      agenda('prs', 'PRs waiting on you', 'ready to merge first', L.prs)),
+    b.notes?.length ? [h('h2', { class: 'h2', text: 'Worth knowing' }), h('ul', { class: 'notes' }, b.notes.map((t) => h('li', { dir: 'auto', text: t })))] : null,
+    themes.length ? [h('h2', { class: 'h2', text: 'What keeps coming up' }), h('div', { class: 'themes' }, themes.map((t, i) => h('button', { class: 'theme', onclick: () => { state.theme = i; state.view = 'all'; render(); } },
+      h('b', { dir: 'auto', text: t.title }), h('span', { dir: 'auto', text: t.summary || '' }),
+      h('span', { class: 'refs' }, h('span', { text: `${themeKeys[i].size} items` }), h('span', { class: 'mono', text: (t.items || []).slice(0, 5).map((r) => '#' + String(r).replace(/\D/g, '')).join('  ') })))))] : null,
+    h('details', { class: 'howto' }, h('summary', { text: 'How to work through this' }),
+      h('ul', { class: 'notes' }, h('li', {}, 'Open a list, move with ', h('kbd', { text: 'j' }), ' ', h('kbd', { text: 'k' }), ', and queue actions with one key: ', h('kbd', { text: 'y' }), ' accepts Claude’s suggestion, ', h('kbd', { text: 'c' }), ' closes, ', h('kbd', { text: 'd' }), ' marks a duplicate, ', h('kbd', { text: 's' }), ' keeps something marked as noise.'),
+        h('li', {}, 'Select several with ', h('kbd', { text: 'x' }), ' to act on all of them at once. ', h('kbd', { text: '?' }), ' lists every shortcut.'),
+        h('li', {}, 'Nothing changes on GitHub from this page. When you’re done, run ', h('code', { text: `/sift:apply ${slug}` }), ' in Claude Code: it shows every command and waits for your yes.'))));
   pane.append(wrap);
 }
 const cmdPreview = (d) => {
