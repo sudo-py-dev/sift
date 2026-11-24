@@ -215,6 +215,7 @@ export function scorePR(it, ctx) {
   const res = finish(it, c, attention, noise, s);
   res.status = status;
   res.size = size;
+  res.external = external;
   return res;
 }
 
@@ -227,6 +228,8 @@ function finish(it, c, attention, noise, signals) {
     idle: Math.round(c.idle),
     lastActivityAt: c.lastActivityAt,
     touched: c.touched,
+    // Plain reply state for the viewer's lists. "Unanswered" is only claimed when the whole thread was fetched.
+    unanswered: !c.touched && it.commentCount <= c.comments.length,
     signals,
   };
 }

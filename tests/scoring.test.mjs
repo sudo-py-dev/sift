@@ -79,3 +79,26 @@ test('short lists are capped on huge repos', () => {
   const { scores } = scoreAll(byKey(...many));
   assert.ok(scores.filter((x) => x.bucket === 'attention' && x.lane === 'urgent').length <= 30);
 });
+
+test('reply state is exported for every issue, not only ones with traction', () => {
+  const s = score(
+    issue({ number: 70, title: 'Small glitch in a dialog', commentCount: 0 }),
+    issue({ number: 71, title: 'Small glitch', commentCount: 1, recentComments: [comment('lead', 'MEMBER', 3)] }),
+    issue({ number: 72, title: 'Small glitch', commentCount: 50, recentComments: [comment('a', 'NONE', 2)] }),
+  );
+  assert.equal(s.i70.unanswered, true);
+  assert.ok(!has(s.i70, 'no maintainer reply'), 'the warning signal still needs traction');
+  assert.equal(s.i71.unanswered, false, 'a maintainer comment is a reply');
+  assert.equal(s.i72.unanswered, false, 'not claimed when older comments were not fetched');
+});
+
+test('external authorship is exported for PRs, whatever their age or checks', () => {
+  const s = score(
+    pr({ number: 80, createdAt: daysAgo(2), checks: 'FAILURE' }),
+    pr({ number: 81, author: 'lead', assoc: 'MEMBER' }),
+  );
+  assert.equal(s.p80.external, true);
+  assert.equal(s.p80.status, 'unreviewed');
+  assert.ok(!has(s.p80, 'contributor waiting'), 'the waiting signal keeps its thresholds');
+  assert.equal(s.p81.external, false);
+});

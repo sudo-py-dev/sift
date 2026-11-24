@@ -66,7 +66,7 @@ for (const s of scored.scores) {
     key: it.key, kind: it.kind, number: it.number, title: clean(it.title), url: it.url, author: it.author,
     labels: it.labels, assignees: it.assignees, reactions: it.reactions.positive, participants: it.participants,
     commentCount: it.commentCount, age: s.age, idle: s.idle,
-    bucket: s.bucket, lane: s.lane, status: s.status, attention: s.attention, urgency: s.urgency ?? s.attention, demand: s.demand ?? 0, noise: s.noise,
+    bucket: s.bucket, lane: s.lane, status: s.status, unanswered: s.unanswered, external: s.external, attention: s.attention, urgency: s.urgency ?? s.attention, demand: s.demand ?? 0, noise: s.noise,
     signals: s.signals, excerpt: excerpt(clean(it.body), 160),
     // Detail pane: more text for the short lists, a little for the long tail (keeps the page small on huge repos).
     body: excerpt(clean(it.body), s.bucket === 'backlog' ? 500 : 1400),
