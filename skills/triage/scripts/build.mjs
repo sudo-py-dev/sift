@@ -6,6 +6,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseArgs, parseRepo, repoDir, readJSON, writeJSON, die, excerpt } from './lib/common.mjs';
 import { clean, injectionFindings } from './lib/untrusted.mjs';
+import { NEEDS, ROLES } from './lib/permissions.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const args = parseArgs();
@@ -155,6 +156,8 @@ const report = {
   repo: {
     slug: repo.slug, url: meta.url || `https://github.com/${repo.slug}`, description: meta.description || '',
     fetchedAt: meta.fetchedAt, totals: meta.totals, fetched: meta.fetched,
+    // The signed-in user's role when fetched (lib/permissions.mjs). The inbox locks actions it doesn't allow.
+    permission: meta.permission || null, archived: !!meta.archived, access: { roles: ROLES, needs: NEEDS },
     partial: meta.totals && meta.fetched && meta.fetched.issues < meta.totals.openIssues,
   },
   generatedAt: new Date().toISOString(),

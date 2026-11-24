@@ -4,6 +4,7 @@
 import path from 'node:path';
 import { parseArgs, parseRepo, repoDir, readJSON, die, fmtDays, daysBetween } from './lib/common.mjs';
 import { ACTIONS, command, shellQuote, validateDecisions } from './lib/decisions.mjs';
+import { can, lockReason, roleLabel } from './lib/permissions.mjs';
 
 const args = parseArgs();
 const repo = parseRepo(args._[0]);
@@ -19,6 +20,7 @@ const data = checked.value;
 if (data) for (const [k, d] of Object.entries(raw.decisions || {})) if (data.decisions[k] && d.appliedAt) data.decisions[k].appliedAt = String(d.appliedAt).slice(0, 40);
 if (!data || !Object.keys(data.decisions || {}).length) die(`No decisions queued. Open the inbox (open.mjs ${repo.slug}) and queue some actions first.`);
 const items = readJSON(path.join(dir, '.cache', 'items.json'), {});
+const role = readJSON(path.join(dir, '.cache', 'meta.json'), {}).permission || null;
 
 const pending = Object.entries(data.decisions).filter(([, d]) => d.status === 'pending');
 const rows = pending.map(([key, d]) => {
@@ -28,6 +30,7 @@ const rows = pending.map(([key, d]) => {
   if (!it) warnings.push('not in the last fetch (it may already be closed or merged)');
   else if (d.at && it.updatedAt > d.at) warnings.push(`changed on GitHub ${fmtDays(daysBetween(it.updatedAt, new Date()))} ago, after you decided`);
   if (d.action === 'merge' && it && (it.checks === 'FAILURE' || it.mergeable === 'CONFLICTING')) warnings.push(`checks ${it.checks.toLowerCase()}, mergeable ${String(it.mergeable).toLowerCase()}`);
+  if (!can(role, d.action)) warnings.push(`locked: ${lockReason(role, d.action)} apply.mjs will skip it`);
   if (argv === undefined) warnings.push('comment text is empty: draft it from the note, write it into decisions.json, and show the user before applying');
   return { key, ...d, title: it?.title || d.title, label: ACTIONS[d.kind][d.action].label, github: argv !== null, command: argv ? shellQuote(argv) : null, warnings };
 });
@@ -40,6 +43,7 @@ if (args.json) {
 const gh = rows.filter((r) => r.github);
 const local = rows.filter((r) => !r.github);
 const done = Object.values(data.decisions).filter((d) => d.status !== 'pending').length;
+if (role) console.log(`ACCESS    ${roleLabel(role)} (when last fetched; apply.mjs checks again with GitHub before sending anything)`);
 console.log(`QUEUE     ${rows.length} pending  ·  ${gh.length} change GitHub  ·  ${local.length} only change the report${done ? `  ·  ${done} already applied` : ''}`);
 if (data.instructions?.trim()) console.log(`\nINSTRUCTIONS FROM YOU\n  ${data.instructions.trim().replace(/\n/g, '\n  ')}`);
 const show = (title, list) => {

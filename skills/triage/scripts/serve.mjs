@@ -100,7 +100,8 @@ const server = http.createServer(async (req, res) => {
     let body;
     try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return send(res, 400, { error: 'invalid JSON' }); }
     const meta = readJSON(path.join(dir, '.cache', 'meta.json'), {});
-    const { value, errors } = validateDecisions(body, meta.repo);
+    // Refuse actions the user's account can't take on this repo (role recorded by fetch.mjs).
+    const { value, errors } = validateDecisions(body, meta.repo, meta.permission || null);
     if (errors.length) return send(res, 400, { error: errors.slice(0, 5).join('; ') });
     // Keep results Claude already recorded; the browser only owns the pending queue.
     const prev = readJSON(file, { decisions: {} });

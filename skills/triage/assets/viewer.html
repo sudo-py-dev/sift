@@ -437,6 +437,19 @@ dialog::backdrop{background:rgba(10,10,9,.55);backdrop-filter:blur(3px)}
 .form{animation:rise .2s var(--ease) both}
 .toast{transition:opacity .2s var(--ease),transform .2s var(--ease)}
 
+/* access: actions the account can't take */
+.access{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600;color:var(--wanted);background:var(--wanted-soft);white-space:nowrap;cursor:help}
+.access svg.ic{width:13px;height:13px;stroke-width:2}
+.access-note{display:flex;gap:12px;align-items:flex-start;background:var(--wanted-soft);border-radius:var(--r2);padding:12px 16px;margin:-4px 0 22px;font-size:13.5px;line-height:1.55;color:var(--text)}
+.access-note svg.ic{color:var(--wanted);margin-top:2px}
+.act.locked{color:var(--faint);opacity:.55;cursor:not-allowed}
+.act.locked:hover{background:transparent;color:var(--faint)}
+.next.locked{display:inline-flex;align-items:center;gap:4px;color:var(--faint);border-style:dashed;cursor:help}
+.next.locked svg.ic{width:11px;height:11px;stroke-width:2.2}
+.verdict .suggest.locked-note{align-items:flex-start;gap:10px;font-size:13px;color:var(--muted);background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.verdict .suggest.locked-note svg.ic{color:var(--wanted);margin-top:2px;flex:none}
+.verdict .suggest.locked-note b{color:var(--text);font-weight:600}
+
 @media (max-width:1100px){.main{grid-template-columns:210px 1fr}.main .detail{display:none}.main.detail-open{grid-template-columns:210px 0 1fr}.main.detail-open .listpane{display:none}.main.detail-open .detail{display:flex}}
 @media (max-width:720px){.main,.main.detail-open,.main.reading{grid-template-columns:1fr}.side{display:none}.search{display:none}.dscroll{padding:20px}.reading-pane{padding:22px 18px 56px}.agendas{grid-template-columns:1fr}.ag{grid-template-columns:48px 1fr}.ag > .tag,.ag > .next{grid-column:2;justify-self:start}.top .save{display:none}}
 </style>
@@ -446,6 +459,7 @@ dialog::backdrop{background:rgba(10,10,9,.55);backdrop-filter:blur(3px)}
   <header class="top">
     <div class="brand"><svg class="logo" viewBox="0 0 534 613" aria-hidden="true"><rect width="534" height="93" rx="46.5" fill="#f87171"/><rect y="130" width="425" height="93" rx="46.5" fill="#fb923c"/><rect y="260" width="329" height="93" rx="46.5" fill="#4ade80"/><rect y="390" width="206" height="93" rx="46.5" fill="#a3a19a"/><rect y="520" width="151" height="93" rx="46.5" fill="#a3a19a"/></svg>Sift</div>
     <a class="repo" id="repo" target="_blank" rel="noopener noreferrer"></a>
+    <span class="access" id="access" role="note" hidden></span>
     <div class="search" role="search">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="q" type="search" placeholder="Search titles, authors, labels, notes, #number" aria-label="Search" autocomplete="off">
@@ -542,6 +556,7 @@ const ICONS = {
   help: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-3.5-3.5',
   hash: 'M4 9h16M4 15h16M10 3 8 21M16 3l-2 18',
+  lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
   close: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9 9l6 6M15 9l-6 6',
   duplicate: 'M9 9h10v10H9zM5 15V5h10',
   comment: 'M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z',
@@ -594,6 +609,25 @@ const ACTIONS = {
   pr: { merge: 'Merge', approve: 'Approve', close: 'Close', comment: 'Comment', nudge: 'Nudge author', label: 'Labels', keep: 'Keep', watch: 'Watch' },
 };
 const LOCAL_ONLY = new Set(['keep', 'watch', 'escalate']);
+// ---------- access: what the signed-in account may do on this repo (lib/permissions.mjs via build.mjs) ----------
+const ROLE = D.repo.permission || null; // null on reports fetched before roles were recorded: nothing is locked here, apply still checks live
+const ACCESS = D.repo.access || { roles: [], needs: {} };
+const rankOf = (r) => ACCESS.roles.indexOf(r);
+const can = (action) => !ROLE || !(action in ACCESS.needs) || rankOf(ROLE) >= rankOf(ACCESS.needs[action]);
+const roleName = (r) => ({ NONE: 'no', READ: 'read', TRIAGE: 'triage', WRITE: 'write', MAINTAIN: 'maintain', ADMIN: 'admin' })[r] || 'unknown';
+const lockReason = (action) => ROLE === 'NONE'
+  ? 'Your account can’t change this repository (no access, or it is archived).'
+  : `Needs ${roleName(ACCESS.needs[action])} access. Your account has ${roleName(ROLE)} access to this repository.`;
+const limited = ROLE && ['NONE', 'READ', 'TRIAGE'].includes(ROLE);
+const GH_ACTION_WORDS = { comment: 'comment', 'needs-repro': 'ask for a reproduction', nudge: 'nudge PR authors', close: 'close', duplicate: 'close as duplicate', label: 'edit labels', approve: 'approve PRs', merge: 'merge PRs' };
+function accessSummary() {
+  const ok = Object.keys(GH_ACTION_WORDS).filter(can).map((a) => GH_ACTION_WORDS[a]);
+  const no = Object.keys(GH_ACTION_WORDS).filter((a) => !can(a)).map((a) => GH_ACTION_WORDS[a]);
+  const join = (l) => l.length > 1 ? `${l.slice(0, -1).join(', ')} and ${l[l.length - 1]}` : l[0];
+  return `Your account has ${roleName(ROLE)} access to ${D.repo.slug}${D.repo.archived ? ' (archived)' : ''}. `
+    + (ok.length ? `You can ${join(ok)}. ` : 'Nothing can be changed on GitHub from here. ')
+    + (no.length && ok.length ? `Locked: ${join(no)}, including Claude’s suggestions that need them.` : '');
+}
 const DEFAULT_TEXT = {
   'needs-repro': 'Thanks for the report. Could you share a minimal reproduction, the exact version you are using, and your OS? We will take another look once we can reproduce it.',
   nudge: 'Are you still working on this? It needs a rebase and green checks before it can be reviewed. Let us know if you would like someone else to pick it up.',
@@ -640,6 +674,7 @@ function updateCount() { $('#qcount').textContent = pendingCount(); const q = na
 let lastQueued = [];
 function queue(keys, action, fields = {}) {
   const added = [];
+  if (!can(action)) { toast(lockReason(action)); return; }
   for (const key of keys) {
     const x = byKey.get(key);
     if (!x || !ACTIONS[x.kind][action]) continue;
@@ -681,7 +716,8 @@ const isWaiting = (x) => x.kind === 'pr' && x.status === 'unreviewed' && (x.exte
 const waitDays = (x) => (isWaiting(x) ? x.age : 0);
 const CLOSE_ACTIONS = new Set(['close-duplicate', 'close-stale', 'close-not-planned', 'close-completed', 'close']);
 const QUICK_ACTIONS = new Set([...CLOSE_ACTIONS, 'needs-repro', 'nudge-author', 'merge']);
-const isQuick = (x) => QUICK_ACTIONS.has(x.verdict?.action) && !(x.verdict.action === 'merge' && x.status !== 'ready');
+const QUICK_NEEDS = { 'close-duplicate': 'duplicate', 'close-stale': 'close', 'close-not-planned': 'close', 'close-completed': 'close', close: 'close', 'needs-repro': 'needs-repro', 'nudge-author': 'nudge', merge: 'merge' };
+const isQuick = (x) => QUICK_ACTIONS.has(x.verdict?.action) && !(x.verdict.action === 'merge' && x.status !== 'ready') && can(QUICK_NEEDS[x.verdict.action]);
 const isUnanswered = (x) => x.bucket !== 'noise' && noTeamReply(x) && !CLOSE_ACTIONS.has(x.verdict?.action);
 const VIEWS = [
   { id: 'brief', ic: 'overview', name: 'Overview', color: 'var(--accent)', reading: true },
@@ -778,6 +814,8 @@ function decisionTag(x) {
   const name = ACTIONS[x.kind][d.action] || d.action;
   if (d.status === 'done') return h('span', { class: 'tag done', text: `${name} ✓` });
   if (d.status === 'failed') return h('span', { class: 'tag failed', text: `${name} failed` });
+  if (d.status === 'skipped') return h('span', { class: 'tag failed', title: d.result || '', text: `${name} skipped` });
+  if (!can(d.action)) return h('span', { class: 'tag failed', title: lockReason(d.action), text: `${name}: locked` });
   return h('span', { class: 'tag', text: d.action === 'duplicate' ? `Dup of #${d.of}` : name });
 }
 function rowEl(x, i) {
@@ -796,7 +834,10 @@ function rowEl(x, i) {
 const NEXT = { fix: ['Fix', 'warn'], investigate: ['Investigate', 'warn'], respond: ['Reply', 'warn'], review: ['Review', 'good'], merge: ['Merge', 'good'], 'needs-repro': ['Ask repro', ''], 'nudge-author': ['Nudge', ''], 'close-duplicate': ['Close: dup', 'muted'], 'close-stale': ['Close: stale', 'muted'], 'close-not-planned': ['Close', 'muted'], 'close-completed': ['Close: fixed', 'muted'], close: ['Close', 'muted'], 'keep-watching': ['Watch', 'muted'], label: ['Label', 'muted'] };
 function nextTag(x) {
   const n = NEXT[x.verdict?.action];
-  return n ? h('span', { class: `next ${n[1]}`, title: 'Claude’s suggested next step (press y to accept)', text: n[0] }) : null;
+  if (!n) return null;
+  const need = QUICK_NEEDS[x.verdict.action];
+  if (need && !can(need)) return h('span', { class: 'next locked', title: `Claude suggests: ${n[0]}. Locked: ${lockReason(need)}` }, icon('lock'), n[0]);
+  return h('span', { class: `next ${n[1]}`, title: 'Claude’s suggested next step (press y to accept)', text: n[0] });
 }
 let listCache = [];
 function renderList() {
@@ -821,7 +862,7 @@ function renderList() {
         const label = { duplicates: 'Confirmed duplicates', related: 'Related, not duplicates', '': 'Not reviewed yet' }[c.verdict] ?? c.verdict;
         const closers = c.members.filter((n) => n !== c.keep).map((n) => issueNo.get(n)?.key).filter(Boolean);
         frag.append(h('div', { class: 'cluster-h' }, h('span', {}, h('b', { text: label }), c.summary ? ` · ${c.summary}` : ''),
-          c.verdict === 'duplicates' && closers.some((k) => !store.decisions[k]) ? h('button', { class: 'btn', onclick: (e) => { e.stopPropagation(); queue(closers, 'duplicate', { of: c.keep }); } }, `Queue ${closers.length} as dup of #${c.keep}`) : null));
+          c.verdict === 'duplicates' && can('duplicate') && closers.some((k) => !store.decisions[k]) ? h('button', { class: 'btn', onclick: (e) => { e.stopPropagation(); queue(closers, 'duplicate', { of: c.keep }); } }, `Queue ${closers.length} as dup of #${c.keep}`) : null));
       }
     }
     frag.append(rowEl(x, i));
@@ -1024,13 +1065,15 @@ function renderDetail() {
   if (inj) sc.append(h('div', { class: 'warnbox', role: 'note' }, icon('escalate'), h('div', {}, h('b', { text: inj.t === 'hidden text' ? 'Hidden text removed. ' : 'Contains text aimed at AI tools. ' }), inj.why, ' Sift never acts on text from issues; only your queued actions are applied, after you confirm.')));
   if (v.summary || v.why) {
     const sug = v.action && SUGGEST[v.action] ? SUGGEST[v.action](x, v) : null;
-    const can = sug && ACTIONS[x.kind][sug[0]];
+    const fits = sug && ACTIONS[x.kind][sug[0]];
+    const ok = fits && can(sug[0]);
     sc.append(h('div', { class: 'verdict' },
       h('div', { class: 'vh' }, h('span', {}, icon('sparkle'), 'Claude’s read'), v.action ? h('span', { class: 'tag', text: v.action.replace(/-/g, ' ') }) : null),
       v.summary ? h('p', { dir: 'auto', text: v.summary }) : null,
       v.why ? h('div', { class: 'why', dir: 'auto', text: v.why }) : null,
       v.action === 'review' && x.kind === 'pr' ? h('div', { class: 'suggest' }, h('a', { class: 'btn primary', href: safeUrl(x.url) + '/files', target: '_blank', rel: 'noopener noreferrer' }, icon('files'), 'Review the changes', h('kbd', { text: 'y' })), h('span', { text: 'Then approve (a), merge (g) or comment (m) here.' })) : null,
-      can ? h('div', { class: 'suggest' }, h('button', { class: 'btn primary', onclick: () => acceptSuggestion(x) }, icon(sug[0]), SUGGEST_LABEL[sug[0]](sug[1]), h('kbd', { text: 'y' })), h('span', { text: 'You review the text before it is queued.' })) : null));
+      ok ? h('div', { class: 'suggest' }, h('button', { class: 'btn primary', onclick: () => acceptSuggestion(x) }, icon(sug[0]), SUGGEST_LABEL[sug[0]](sug[1]), h('kbd', { text: 'y' })), h('span', { text: 'You review the text before it is queued.' })) : null,
+      fits && !ok ? h('div', { class: 'suggest locked-note', role: 'note' }, icon('lock'), h('span', {}, h('b', { text: `${SUGGEST_LABEL[sug[0]](sug[1])} is locked. ` }), lockReason(sug[0]), ' Ask a maintainer, or leave a comment instead.')) : null));
   }
   sc.append(meters);
   sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Why it’s here' }), h('div', { class: 'reasons' }, x.signals.length ? x.signals.map((s) => h('div', { class: 'reason' }, h('span', { class: `chip ${s.tone}`, text: s.t }), h('span', { text: s.why }))) : h('span', { style: 'color:var(--faint)', text: 'No strong signals either way.' }))));
@@ -1078,16 +1121,18 @@ function actionArea(keys) {
     keys.length > 1 ? h('span', { class: 'lbl', text: `${keys.length} selected` }) : null,
     groups.map((g, gi) => h('div', { class: 'agroup' + (g.compact ? ' compact' : '') + (gi > 0 && !g.compact ? ' secondary' : ''), role: 'group' },
       g.acts.map((a) => h('button', {
-        class: 'act' + (g.tone ? ' ' + g.tone : '') + (formOpen?.action === a ? ' on' : ''),
+        class: 'act' + (g.tone ? ' ' + g.tone : '') + (formOpen?.action === a ? ' on' : '') + (can(a) ? '' : ' locked'),
         onclick: () => startAction(a),
-        'aria-label': `${name(a)} (${KEYOF[a]})`,
-        title: `${name(a)} · ${KEYOF[a]}${LOCAL_ONLY.has(a) ? ' · changes only this report' : ''}`,
-      }, icon(a), h('span', { class: 't', text: name(a) }), h('kbd', { text: KEYOF[a] }))))));
+        'aria-disabled': can(a) ? null : 'true',
+        'aria-label': can(a) ? `${name(a)} (${KEYOF[a]})` : `${name(a)}: locked. ${lockReason(a)}`,
+        title: can(a) ? `${name(a)} · ${KEYOF[a]}${LOCAL_ONLY.has(a) ? ' · changes only this report' : ''}` : `${name(a)} is locked. ${lockReason(a)}`,
+      }, icon(can(a) ? a : 'lock'), h('span', { class: 't', text: name(a) }), can(a) ? h('kbd', { text: KEYOF[a] }) : null)))));
   return formOpen ? [formEl(keys), bar] : [bar];
 }
 function startAction(action, preset = {}) {
   const keys = selection.size ? [...selection] : state.id ? [state.id] : [];
   if (!keys.length || !allowed(keys).includes(action)) return;
+  if (!can(action)) { toast(lockReason(action)); return; }
   if (!NEEDS_FORM.has(action)) { queue(keys, action, {}); return; }
   const x = byKey.get(keys[0]);
   const prev = keys.length === 1 ? store.decisions[keys[0]] : null;
@@ -1112,6 +1157,7 @@ function acceptSuggestion(x) {
   if (!s) { toast('No suggestion to accept here'); return; }
   const [action, fields] = s(x, v);
   if (!ACTIONS[x.kind][action]) return;
+  if (!can(action)) { toast(`Claude’s suggestion is locked. ${lockReason(action)}`); return; }
   selection.clear();
   if (!NEEDS_FORM.has(action)) { queue([x.key], action, fields); return; }
   startAction(action, fields);
@@ -1225,6 +1271,7 @@ function renderBrief() {
     b.headline
       ? h('div', { class: 'read' }, h('div', { class: 'vh' }, icon('sparkle'), 'Claude’s read'), h('p', { dir: 'auto', text: b.headline }))
       : h('div', { class: 'read muted' }, h('p', { text: 'Scores only: no written brief yet. Ask Claude to finish the triage to add a headline, themes and suggested actions.' })),
+    limited ? h('div', { class: 'access-note', role: 'note' }, icon('lock'), h('div', {}, h('b', { text: `${roleName(ROLE)[0].toUpperCase() + roleName(ROLE).slice(1)} access. ` }), accessSummary(), ' Sift will not queue or apply a locked action.')) : null,
     stats,
     h('div', { class: 'agendas' },
       agenda('urgent', 'Issues that need you', 'most severe first', L.urgent),
@@ -1282,7 +1329,9 @@ function renderQueue() {
         return h('tr', {},
           h('td', { class: 't' }, h('a', { href: '#', onclick: (e) => { e.preventDefault(); state.view = 'all'; state.q = ''; render(); select(k); }, dir: 'auto' }, h('span', { class: 'mono', style: 'color:var(--faint);margin-inline-end:6px', text: (d.kind === 'pr' ? '!' : '#') + d.number }), x?.title || d.title || '')),
           h('td', {}, h('div', { text: `${ACTIONS[d.kind]?.[d.action] || d.action}${d.of ? ` of #${d.of}` : ''}` }), h('div', { class: 'cmd', text: cmdPreview(d) }), d.note ? h('div', { class: 'note', text: `Note: ${d.note}` }) : null),
-          h('td', {}, h('span', { class: 'tag' + (d.status === 'done' ? ' done' : d.status === 'failed' ? ' failed' : ''), text: d.status }), d.result ? h('div', { class: 'cmd', text: d.result }) : null),
+          h('td', {}, d.status === 'pending' && !can(d.action)
+            ? [h('span', { class: 'tag failed', text: 'locked' }), h('div', { class: 'cmd', text: `${lockReason(d.action)} It will be skipped. Remove it, or ask a maintainer.` })]
+            : [h('span', { class: 'tag' + (d.status === 'done' ? ' done' : d.status === 'failed' || d.status === 'skipped' ? ' failed' : ''), text: d.status }), d.result ? h('div', { class: 'cmd', text: d.result }) : null]),
           h('td', {}, d.status === 'pending' ? h('button', { class: 'btn ghost danger', onclick: () => { delete store.decisions[k]; persist(); renderQueue(); counts(); } }, 'Remove') : null));
       })))] : null);
   pane.append(wrap);
@@ -1363,6 +1412,12 @@ document.addEventListener('keydown', (e) => {
 
 // ---------- start ----------
 $('#repo').textContent = slug;
+if (limited) {
+  const a = $('#access');
+  a.hidden = false;
+  a.title = accessSummary();
+  a.append(icon('lock'), h('span', { text: `${roleName(ROLE)} access` }));
+}
 $('#repo').href = safeUrl(D.repo.url);
 document.title = `Sift · ${slug}`;
 readHash();

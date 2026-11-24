@@ -6,6 +6,8 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { parseArgs, parseRepo, repoDir, readJSON, writeJSON, die } from './lib/common.mjs';
 import { command, shellQuote, validateDecisions } from './lib/decisions.mjs';
+import { can, effectiveRole, lockReason, roleLabel } from './lib/permissions.mjs';
+import { viewerAccess } from './lib/gh.mjs';
 
 const args = parseArgs();
 const repo = parseRepo(args._[0]);
@@ -27,8 +29,26 @@ const targets = Object.entries(data.decisions).filter(([k, d]) => d.status === '
 if (wanted) for (const k of wanted) if (!data.decisions[k] || data.decisions[k].status !== 'pending') console.log(`SKIP      ${k}: not a pending decision`);
 if (!targets.length) die('Nothing pending to apply.');
 
+// Check the account's role on the repo live, right before sending anything. The inbox locks actions too,
+// but roles change and decisions.json can be edited; this is the check that counts.
+let role;
+try {
+  role = effectiveRole(await viewerAccess(repo.owner, repo.name));
+} catch (e) {
+  die(`Could not check your access to ${repo.slug} (${String(e.message).slice(0, 200)}). Nothing was applied.`);
+}
+console.log(`ACCESS    ${roleLabel(role)}`);
+
 let ok = 0, failed = 0;
 for (const [key, d] of targets) {
+  if (!can(role, d.action)) {
+    d.status = 'skipped';
+    d.result = lockReason(role, d.action);
+    d.appliedAt = new Date().toISOString();
+    console.log(`SKIP      ${key}: ${d.action} is locked. ${d.result}`);
+    writeJSON(file, data);
+    continue;
+  }
   const argv = command(d, repo.slug);
   if (argv === undefined) {
     console.log(`SKIP      ${key}: the comment text is still empty. Draft it into decisions.json, show the user, then apply.`);

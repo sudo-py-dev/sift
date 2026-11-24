@@ -1,5 +1,6 @@
 // The actions a person can queue in the inbox, how they're validated, and the exact gh command each becomes.
 // Commands are argument arrays (run without a shell), so issue text can never be interpreted as shell.
+import { can, lockReason } from './permissions.mjs';
 
 export const ACTIONS = {
   issue: {
@@ -33,8 +34,11 @@ export const DEFAULT_TEXT = {
 const STATUSES = new Set(['pending', 'done', 'failed', 'skipped']);
 const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
 
-/** Cleans what the browser sends. Returns { value, errors }. */
-export function validateDecisions(body, repo) {
+/**
+ * Cleans what the browser sends. Returns { value, errors }.
+ * With `role` (the user's repository role), a pending action that role can't take is refused.
+ */
+export function validateDecisions(body, repo, role = null) {
   const errors = [];
   if (!body || typeof body !== 'object' || typeof body.decisions !== 'object' || Array.isArray(body.decisions)) return { value: null, errors: ['expected { decisions: {...} }'] };
   const out = { repo: repo || str(body.repo, 200), updatedAt: new Date().toISOString(), instructions: str(body.instructions, 4000), decisions: {} };
@@ -45,6 +49,7 @@ export function validateDecisions(body, repo) {
     if (!m || !d || typeof d !== 'object') { errors.push(`${key}: bad key`); continue; }
     const kind = m[1] === 'p' ? 'pr' : 'issue';
     if (!ACTIONS[kind][d.action]) { errors.push(`${key}: "${d.action}" is not an action for ${kind === 'pr' ? 'pull requests' : 'issues'}`); continue; }
+    if (role && (d.status ?? 'pending') === 'pending' && !can(role, d.action)) { errors.push(`${key}: ${d.action} is locked. ${lockReason(role, d.action)}`); continue; }
     const v = { action: d.action, kind, number: Number(m[2]), title: str(d.title, 300), note: str(d.note, 2000), at: str(d.at, 40) || new Date().toISOString(), status: STATUSES.has(d.status) ? d.status : 'pending' };
     if (d.result) v.result = str(d.result, 1000);
     if (d.action === 'close') v.reason = d.reason === 'completed' ? 'completed' : 'not planned';

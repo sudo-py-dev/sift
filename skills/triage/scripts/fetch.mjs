@@ -5,6 +5,7 @@
 import path from 'node:path';
 import { parseArgs, parseRepo, ensureDirs, readJSON, writeJSON, die, excerpt, meaningfulText, BOT_RE } from './lib/common.mjs';
 import { clean } from './lib/untrusted.mjs';
+import { effectiveRole, roleLabel } from './lib/permissions.mjs';
 import { ghAvailable, repoInfo, fetchTopReacted, shard, fetchSearch, pool, updatedCutoff, budget } from './lib/gh.mjs';
 
 const args = parseArgs();
@@ -28,6 +29,13 @@ const since = incremental ? new Date(new Date(prevMeta.fetchedAt).getTime() - 10
 const startedAt = new Date().toISOString();
 const info = await repoInfo(repo.owner, repo.name);
 console.log(`REPO      ${info.nameWithOwner}  ·  ${info.openIssues.totalCount} open issues  ·  ${info.openPRs.totalCount} open PRs  ·  ★ ${info.stargazerCount}`);
+const role = effectiveRole({ permission: info.viewerPermission, isPrivate: info.isPrivate, archived: info.isArchived });
+const ACCESS_NOTE = {
+  NONE: 'nothing can be changed from the inbox; it is read-only',
+  READ: 'comments only; closing, labels and merging are locked',
+  TRIAGE: 'comments, closing and labels; approving and merging are locked',
+};
+console.log(`ACCESS    ${roleLabel(role)}  ·  ${ACCESS_NOTE[role] || 'every inbox action is available'}`);
 if (info.isArchived) console.log('NOTE      This repository is archived.');
 console.log(`MODE      ${incremental ? `refresh (changes since ${prevMeta.fetchedAt})` : 'full fetch'}`);
 
@@ -161,6 +169,8 @@ writeJSON(metaFile, {
   url: info.url,
   stars: info.stargazerCount,
   archived: info.isArchived,
+  isPrivate: info.isPrivate,
+  permission: role,
   hasDiscussions: info.hasDiscussionsEnabled,
   totals: { openIssues: info.openIssues.totalCount, openPRs: info.openPRs.totalCount },
   fetched: { issues: counts.issue || 0, prs: counts.pr || 0 },
