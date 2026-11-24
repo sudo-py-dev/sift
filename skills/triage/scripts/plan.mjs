@@ -3,14 +3,20 @@
 // Usage: node plan.mjs <owner/repo> [--base <dir>] [--json]
 import path from 'node:path';
 import { parseArgs, parseRepo, repoDir, readJSON, die, fmtDays, daysBetween } from './lib/common.mjs';
-import { ACTIONS, command, shellQuote } from './lib/decisions.mjs';
+import { ACTIONS, command, shellQuote, validateDecisions } from './lib/decisions.mjs';
 
 const args = parseArgs();
 const repo = parseRepo(args._[0]);
 if (!repo) die('Give a repository: owner/name.');
 const dir = repoDir(repo, args.base || process.cwd());
 const file = path.join(dir, 'decisions.json');
-const data = readJSON(file, null);
+const raw = readJSON(file, null);
+if (raw?.repo && parseRepo(raw.repo)?.slug.toLowerCase() !== repo.slug.toLowerCase()) die(`decisions.json is for ${raw.repo}, not ${repo.slug}. Refusing to mix repositories.`);
+// Re-check the file: it may have been edited by hand or by something else since the inbox saved it.
+const checked = raw ? validateDecisions(raw, repo.slug) : { value: null, errors: [] };
+for (const e of checked.errors) console.log(`INVALID   ${e} (ignored)`);
+const data = checked.value;
+if (data) for (const [k, d] of Object.entries(raw.decisions || {})) if (data.decisions[k] && d.appliedAt) data.decisions[k].appliedAt = String(d.appliedAt).slice(0, 40);
 if (!data || !Object.keys(data.decisions || {}).length) die(`No decisions queued. Open the inbox (open.mjs ${repo.slug}) and queue some actions first.`);
 const items = readJSON(path.join(dir, '.cache', 'items.json'), {});
 

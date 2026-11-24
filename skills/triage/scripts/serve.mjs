@@ -27,7 +27,18 @@ const SLUG = /^[A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+$/;
 let port = Number(args.port || 4390);
 
 function send(res, code, body, type = 'application/json; charset=utf-8') {
-  res.writeHead(code, { 'content-type': type, 'cache-control': 'no-store', 'x-content-type-options': 'nosniff', 'referrer-policy': 'no-referrer' });
+  res.writeHead(code, {
+    'content-type': type,
+    'cache-control': 'no-store',
+    'x-content-type-options': 'nosniff',
+    'referrer-policy': 'no-referrer',
+    // No other site may frame the inbox and trick clicks into queueing actions.
+    'x-frame-options': 'DENY',
+    'content-security-policy': "frame-ancestors 'none'; base-uri 'none'; form-action 'none'",
+    'cross-origin-opener-policy': 'same-origin',
+    'cross-origin-resource-policy': 'same-origin',
+    'permissions-policy': 'camera=(), microphone=(), geolocation=(), clipboard-read=()',
+  });
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 }
 
@@ -52,6 +63,7 @@ function listReports() {
 
 const server = http.createServer(async (req, res) => {
   if (!trusted(req)) return send(res, 403, { error: 'forbidden' });
+  if ((req.url || '').length > 2048) return send(res, 414, { error: 'too long' });
   const url = new URL(req.url, `http://${req.headers.host}`);
   const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
 

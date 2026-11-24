@@ -4,6 +4,7 @@
 // A second run only asks GitHub for what changed since the last fetch (use --full to start over).
 import path from 'node:path';
 import { parseArgs, parseRepo, ensureDirs, readJSON, writeJSON, die, excerpt, meaningfulText, BOT_RE } from './lib/common.mjs';
+import { clean } from './lib/untrusted.mjs';
 import { ghAvailable, repoInfo, fetchTopReacted, shard, fetchSearch, pool, updatedCutoff, budget } from './lib/gh.mjs';
 
 const args = parseArgs();
@@ -84,7 +85,7 @@ function normalize(n, kind) {
     key: `${kind === 'pr' ? 'p' : 'i'}${n.number}`,
     kind,
     number: n.number,
-    title: n.title,
+    title: clean(n.title).replace(/\s+/g, ' ').trim().slice(0, 400),
     url: n.url,
     state: n.state,
     author: login,
@@ -92,7 +93,7 @@ function normalize(n, kind) {
     isBot: BOT_RE.test(login),
     createdAt: n.createdAt,
     updatedAt: n.updatedAt,
-    labels: (n.labels?.nodes || []).map((l) => l.name),
+    labels: (n.labels?.nodes || []).map((l) => clean(l.name).slice(0, 60)),
     assignees: (n.assignees?.nodes || []).map((a) => a.login),
     milestone: n.milestone?.title || null,
     reactions: reactions(n.reactionGroups),
@@ -102,10 +103,10 @@ function normalize(n, kind) {
       author: c.author?.login || 'ghost',
       assoc: c.authorAssociation,
       at: c.createdAt,
-      body: excerpt(c.body, 280),
+      body: excerpt(clean(c.body), 280),
     })),
-    body: excerpt(n.body, 1200),
-    bodyLen: meaningfulText(n.body).length,
+    body: excerpt(clean(n.body), 1200),
+    bodyLen: meaningfulText(clean(n.body)).length,
     hasCode: /```|^\s{4}\S|Traceback|Exception|panicked|error\[/m.test(n.body || ''),
   };
   if (kind === 'issue') {

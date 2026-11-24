@@ -21,8 +21,9 @@ export function parseArgs(argv = process.argv.slice(2)) {
 /** Accepts owner/name, a github.com URL, or git@github.com:owner/name(.git). */
 export function parseRepo(s) {
   if (!s) return null;
-  const m = String(s).trim().match(/(?:github\.com[/:])?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
-  if (!m) return null;
+  const m = String(s).trim().match(/^(?:https?:\/\/)?(?:www\.)?(?:git@)?(?:github\.com[/:])?([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+?)(?:\.git)?\/?$/);
+  // Owner and repo names can't start with '-' or '.', which also keeps them from being read as gh flags.
+  if (!m || /^[-.]/.test(m[1]) || /^[-.]/.test(m[2]) || m[1].length > 39 || m[2].length > 100) return null;
   return { owner: m[1], name: m[2], slug: `${m[1]}/${m[2]}` };
 }
 

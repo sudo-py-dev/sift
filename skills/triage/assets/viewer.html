@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; media-src 'none'; frame-src 'none'; worker-src 'none'; manifest-src 'none'">
+<meta name="referrer" content="no-referrer">
 <title>Sift · __TITLE__</title>
 <style>
 /* ---------- tokens ---------- */
@@ -211,6 +212,9 @@ svg.ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-wid
 .md th,.md td{border:1px solid var(--line);padding:5px 10px;text-align:start}
 .md th{background:var(--surface-3);font-weight:600}
 .md .img{color:var(--faint);font-size:12.5px}
+.md .host{color:var(--faint);font-size:12px}
+.warnbox{display:flex;gap:10px;align-items:flex-start;border-radius:var(--r2);padding:12px 14px;margin:18px 0 0;background:var(--urgent-soft);color:var(--text);font-size:13.5px;line-height:1.5}
+.warnbox svg{color:var(--urgent);margin-top:2px}
 .md.compact{font-size:14px;line-height:1.6}
 .md.compact pre{max-height:180px}
 .comments{display:flex;flex-direction:column;gap:12px}
@@ -709,7 +713,12 @@ function mdInline(text, out) {
     else if (m[5] != null || m[6] != null) { const i = h('em'); mdInline(m[5] ?? m[6], i); out.append(i); }
     else if (m[7] != null) { const s = h('s'); mdInline(m[7], s); out.append(s); }
     else if (m[9] != null) out.append(h('span', { class: 'img', text: `[image${m[8] ? ': ' + m[8] : ''}]` }));
-    else if (m[11] != null) { const href = /^https?:\/\//.test(m[11]) ? m[11] : null; if (href) { const a = h('a', { href, target: '_blank', rel: 'noopener noreferrer nofollow' }); mdInline(m[10], a); out.append(a); } else out.append(m[10]); }
+    else if (m[11] != null) {
+      // Link text can lie ("github.com/…" pointing elsewhere), so non-GitHub links show their real host.
+      let u = null; try { u = /^https?:\/\//.test(m[11]) ? new URL(m[11]) : null; } catch {}
+      if (u) { const a = h('a', { href: u.href, target: '_blank', rel: 'noopener noreferrer nofollow', title: u.href }); mdInline(m[10], a); out.append(a); if (!/(^|\.)github\.com$/.test(u.hostname)) out.append(h('span', { class: 'host', text: ` (${u.hostname})` })); }
+      else out.append(m[10]);
+    }
     else if (m[12] != null) out.append(h('a', { href: m[12], target: '_blank', rel: 'noopener noreferrer nofollow', text: m[12].replace(/^https?:\/\/(www\.)?/, '').slice(0, 70) + (m[12].length > 80 ? '…' : '') }));
     last = re.lastIndex;
   }
@@ -834,6 +843,8 @@ function renderDetail() {
       ? [meter('Review priority', x.attention, 'var(--review)'), meter('Size', Math.min(100, Math.round(Math.log10(1 + (x.size || 0)) * 25)), 'var(--info)', `${fmt(x.size)} lines`), meter('Noise', x.noise, 'var(--noise)')]
       : [meter('Urgency', x.urgency, 'var(--urgent)'), meter('Demand', x.demand, 'var(--wanted)'), meter('Noise', x.noise, 'var(--noise)')]),
   );
+  const inj = x.signals.find((g) => /injection|hidden text/.test(g.t));
+  if (inj) sc.append(h('div', { class: 'warnbox', role: 'note' }, icon('escalate'), h('div', {}, h('b', { text: inj.t === 'hidden text' ? 'Hidden text removed. ' : 'Contains text aimed at AI tools. ' }), inj.why, ' Sift never acts on text from issues; only your queued actions are applied, after you confirm.')));
   if (v.summary || v.why) {
     const sug = v.action && SUGGEST[v.action] ? SUGGEST[v.action](x, v) : null;
     const can = sug && ACTIONS[x.kind][sug[0]];

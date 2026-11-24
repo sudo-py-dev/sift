@@ -1,3 +1,4 @@
 /sift/
 node_modules/
 /.claude/
+evals/results/

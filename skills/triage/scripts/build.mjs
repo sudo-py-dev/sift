@@ -5,6 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { parseArgs, parseRepo, repoDir, readJSON, writeJSON, die, excerpt } from './lib/common.mjs';
+import { clean, injectionFindings } from './lib/untrusted.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const args = parseArgs();
@@ -36,6 +37,24 @@ for (const f of fs.existsSync(vdir) ? fs.readdirSync(vdir).filter((f) => f.endsW
   for (const [k, v] of Object.entries(data)) if (isFilled(v) || !verdicts[k]) verdicts[k] = { ...v, _file: f };
 }
 
+// Claude's verdicts are read with issue text in view, so check them for what an injection could plant:
+// links off GitHub, @mentions, instruction-like text, oversize fields. The comment is what may get posted.
+const STR = (v, n) => clean(typeof v === 'string' ? v : '').trim().slice(0, n);
+function lintVerdict(key, v, it) {
+  const out = { summary: STR(v.summary, 300), why: STR(v.why, 400), action: STR(v.action, 40), comment: STR(v.comment, 1500), bucket: STR(v.bucket, 20), duplicateOf: Number(v.duplicateOf) || undefined };
+  const where = `${v._file} ${key}`;
+  for (const f of ['summary', 'why', 'comment']) if (typeof v[f] === 'string' && v[f].length > { summary: 300, why: 400, comment: 1500 }[f]) problems.push(`${where}: ${f} is too long and was cut`);
+  const all = `${out.summary}\n${out.why}\n${out.comment}`;
+  const inj = injectionFindings(all);
+  if (inj.length) problems.push(`${where}: verdict text looks like it was steered by the issue (${inj.join(', ')}). Re-judge this item from the worksheet.`);
+  const links = (out.comment.match(/https?:\/\/[^\s)]+/g) || []).filter((u) => !/^https:\/\/(github\.com|docs\.github\.com)\//.test(u) && !(meta.homepage && u.startsWith(meta.homepage)));
+  if (links.length) { problems.push(`${where}: the suggested comment links outside GitHub (${links.slice(0, 2).join(', ')}). Removed; add it back by hand only if you meant it.`); out.comment = out.comment.replace(/https?:\/\/[^\s)]+/g, (u) => (links.includes(u) ? '[link removed]' : u)); }
+  const mentions = (out.comment.match(/(^|\s)@[A-Za-z0-9-]{1,39}/g) || []).map((m) => m.trim()).filter((m) => m.slice(1).toLowerCase() !== String(it.author).toLowerCase());
+  if (mentions.length) problems.push(`${where}: the suggested comment mentions ${mentions.join(', ')}; posting it would notify them. Check that's intended.`);
+  if (out.duplicateOf && !items[`i${out.duplicateOf}`]) problems.push(`${where}: duplicateOf #${out.duplicateOf} is not an open issue that was fetched`);
+  return out;
+}
+
 const scoreBy = new Map(scored.scores.map((s) => [s.key, s]));
 let filled = 0, empty = 0, stale = 0;
 const out = [];
@@ -44,14 +63,14 @@ for (const s of scored.scores) {
   if (!it) continue;
   const v = verdicts[s.key];
   const x = {
-    key: it.key, kind: it.kind, number: it.number, title: it.title, url: it.url, author: it.author,
+    key: it.key, kind: it.kind, number: it.number, title: clean(it.title), url: it.url, author: it.author,
     labels: it.labels, assignees: it.assignees, reactions: it.reactions.positive, participants: it.participants,
     commentCount: it.commentCount, age: s.age, idle: s.idle,
     bucket: s.bucket, lane: s.lane, status: s.status, attention: s.attention, urgency: s.urgency ?? s.attention, demand: s.demand ?? 0, noise: s.noise,
-    signals: s.signals, excerpt: excerpt(it.body, 160),
+    signals: s.signals, excerpt: excerpt(clean(it.body), 160),
     // Detail pane: more text for the short lists, a little for the long tail (keeps the page small on huge repos).
-    body: excerpt(it.body, s.bucket === 'backlog' ? 500 : 1400),
-    comments: (it.recentComments || []).slice(s.bucket === 'backlog' ? -1 : -3).map((c) => ({ author: c.author, assoc: c.assoc, at: c.at, body: excerpt(c.body, s.bucket === 'backlog' ? 200 : 420) })),
+    body: excerpt(clean(it.body), s.bucket === 'backlog' ? 500 : 1400),
+    comments: (it.recentComments || []).slice(s.bucket === 'backlog' ? -1 : -3).map((c) => ({ author: c.author, assoc: c.assoc, at: c.at, body: excerpt(clean(c.body), s.bucket === 'backlog' ? 200 : 420) })),
     assoc: it.assoc, createdAt: it.createdAt, updatedAt: it.updatedAt, milestone: it.milestone,
     linkedPRs: it.linkedPRs || [], closesIssues: it.closesIssues || [],
   };
@@ -64,7 +83,7 @@ for (const s of scored.scores) {
     const allowed = ACTIONS[it.kind];
     if (v.action && !allowed.includes(v.action)) problems.push(`${v._file} ${s.key}: action "${v.action}" is not one of ${allowed.join(', ')}`);
     if (v.bucket && !BUCKETS.has(v.bucket)) problems.push(`${v._file} ${s.key}: bucket "${v.bucket}" must be one of ${[...BUCKETS].join(', ')}`);
-    x.verdict = { summary: v.summary || '', why: v.why || '', action: v.action || '', comment: v.comment || '', bucket: v.bucket || '', duplicateOf: v.duplicateOf || x.dupOf };
+    x.verdict = lintVerdict(s.key, v, it);
     // Claude has read it; its call on the bucket wins over the heuristic.
     if (v.bucket && BUCKETS.has(v.bucket) && v.bucket !== x.bucket && x.bucket !== 'bots') {
       x.signals = [...x.signals, { t: `moved to ${v.bucket}`, tone: 'info', why: `Scored as ${x.bucket}; Claude moved it after reading it` }];

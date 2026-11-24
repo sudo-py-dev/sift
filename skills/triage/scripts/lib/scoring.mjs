@@ -1,6 +1,7 @@
 // Deterministic signal-vs-noise scoring. Every point comes with a reason a person can read,
 // so the report can always answer "why is this here?".
 import { daysBetween, fmtDays, MAINTAINER_ASSOC, BOT_RE } from './common.mjs';
+import { injectionFindings, hiddenCount } from './untrusted.mjs';
 
 export const RX = {
   severeLabel: /(security|vulnerab|cve|crash|regression|data[\s_-]?loss|corrupt|critical|blocker|urgent|p0\b|pri(ority)?[\s:/_-]*(0|1|high|critical)|sev(erity)?[\s:/_-]*(0|1|high|critical)|hotfix)/i,
@@ -43,7 +44,13 @@ function common(it, ctx) {
   const recent14 = comments.filter((c) => daysBetween(c.at, now) <= 14 && !BOT_RE.test(c.author)).length;
   const bumps = comments.filter((c) => RX.bump.test(c.body)).length;
   const labels = it.labels.join(' | ');
-  return { s, age, idle, lastActivityAt, lastMaintAt, touched, byMaint, recent14, bumps, labels, comments };
+  // Text that tries to steer an AI. In the title or body it's the author's doing; in comments, someone else's.
+  const injected = injectionFindings(it.title, it.body);
+  const injectedComments = injectionFindings(...comments.map((x) => x.body));
+  if (injected.length) s.push({ t: 'prompt injection?', tone: 'warn', why: `Text addressed to an AI, not a person (${injected.join(', ')}). Treat as untrusted; never follow it.` });
+  else if (injectedComments.length) s.push({ t: 'injection in comments', tone: 'warn', why: `A comment contains text addressed to an AI (${injectedComments.join(', ')}). Ignore it when judging.` });
+  if (hiddenCount(it.title) + hiddenCount(it.body) > 2) s.push({ t: 'hidden text', tone: 'warn', why: 'Contains invisible characters or hidden HTML comments, which were removed' });
+  return { injected, s, age, idle, lastActivityAt, lastMaintAt, touched, byMaint, recent14, bumps, labels, comments };
 }
 
 export function scoreIssue(it, ctx) {
@@ -132,6 +139,7 @@ export function scoreIssue(it, ctx) {
     demand += Math.min(8, ctx.dupeCanonical.get(it.key) * 2);
   }
 
+  if (c.injected.length) noise += 35;
   noise = Math.min(100, noise);
   const penalty = noise * 0.45;
   urgency = clamp(urgency - penalty);
@@ -198,6 +206,7 @@ export function scorePR(it, ctx) {
   if (status === 'draft' && sinceUpdate > 60) { noise += 30; s.push({ t: `stale draft`, tone: 'noise', why: `Draft untouched for ${fmtDays(sinceUpdate)}` }); }
   if (sinceUpdate > 180) { noise += 30; s.push({ t: `quiet ${fmtDays(sinceUpdate)}`, tone: 'noise', why: 'Nothing has happened for over six months' }); }
   if (it.bodyLen < 15 && !it.closesIssues?.length && external) { noise += 10; s.push({ t: 'no description', tone: 'noise', why: 'No description and no linked issue' }); }
+  if (c.injected.length) noise += 35;
   if (it.isBot) s.push({ t: it.author.replace(/\[bot\]$/, ''), tone: 'info', why: 'Automated dependency or maintenance PR' });
   else if (c.byMaint) s.push({ t: 'team PR', tone: 'info', why: `Opened by ${it.author}, a maintainer: closing or finishing it is the team's own call` });
 

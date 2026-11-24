@@ -197,6 +197,29 @@ sift/                         ← own .gitignore; nothing here is committed
     report.json, .cache/      ← generated
 ```
 
+## Security
+
+Sift reads text written by strangers and puts it in front of Claude and your browser, so it's built so that text can't take control of either:
+
+- **Prompt injection.**
+  - Issue text is cleaned of invisible characters and HTML comments, then fenced in worksheets with a random-id boundary it can't close.
+  - Text aimed at AI tools is flagged: overrides, fake system or chat tags, fake approval, requests for secrets, lookalike-letter tricks.
+  - Claude's own verdicts are linted before they can become a comment.
+  - Nothing reaches GitHub without your confirmation in chat.
+- **Code injection.**
+  - The inbox never parses text as HTML, and a strict CSP blocks outside requests.
+  - `gh` runs with argument arrays, never a shell.
+  - The local server rejects other origins and framing.
+- **Supply chain.** No dependencies, hooks or MCP servers. CI runs with a read-only token, its actions are pinned to commit SHAs, and every change must keep the security tests green.
+
+The test suite includes a corpus of modern injection payloads (ChatML/`[INST]` templates, fake tool calls, forged fences, homoglyphs, Unicode tag smuggling, hidden comments, fake authority, secret exfiltration) plus real-world benign text that must not trip the detector. `evals/` holds behavioural cases you can run against Claude:
+
+```bash
+claude plugin eval . --tag security
+```
+
+See [SECURITY.md](SECURITY.md) for the full model and how to report a vulnerability.
+
 ## Limits
 
 - Only the latest 6 comments per issue are fetched, so "no maintainer reply" is claimed only on threads short enough to have been read in full.
@@ -209,6 +232,6 @@ sift/                         ← own .gitignore; nothing here is committed
 npm test
 ```
 
-No dependencies. Tests cover scoring, duplicate detection, the analyze→build pipeline, decision validation, the server's origin and path checks, and `apply` against a fake `gh`.
+No dependencies. Tests cover scoring, duplicate detection, the analyze→build pipeline, decision validation, the server's origin and path checks, `apply` against a fake `gh`, the injection corpus, and the security invariants CI enforces.
 
 MIT licensed.
