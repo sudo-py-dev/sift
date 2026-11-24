@@ -68,3 +68,9 @@ test('re-running analyze does not re-queue judged, unchanged items', () => {
   fs.writeFileSync(part, JSON.stringify(v));
   assert.match(run('analyze.mjs', base), /nothing new to judge/);
 });
+
+test('the inbox never turns issue text into HTML', () => {
+  const viewer = fs.readFileSync(path.join(scripts, '..', 'assets', 'viewer.html'), 'utf8');
+  assert.doesNotMatch(viewer, /innerHTML|outerHTML|insertAdjacentHTML|document\.write/);
+  assert.match(viewer, /Content-Security-Policy/);
+});
