@@ -1,4 +1,6 @@
-# Sift
+<p align="center"><img src=".claude-plugin/icon.png" width="112" alt="Sift logo: five rounded bars, longest at the top"></p>
+
+<h1 align="center">Sift</h1>
 
 **Sift the signal from the noise in big GitHub repos.** A Claude Code plugin that reads every open issue and pull request, ranks what deserves a maintainer's time, and gives you a keyboard-first inbox to act on it. You queue the actions; Claude applies them after you confirm.
 
@@ -236,5 +238,7 @@ npm test
 ```
 
 No dependencies. Tests cover scoring, duplicate detection, the analyze→build pipeline, decision validation, the server's origin and path checks, `apply` against a fake `gh`, the injection corpus, and the security invariants CI enforces.
+
+Logo, colours, type, icons and voice are in [BRAND.md](BRAND.md).
 
 MIT licensed.

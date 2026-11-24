@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Sift">
+  <!-- Vector source of .claude-plugin/icon.png (1024 × 1024). Same geometry and colours. See BRAND.md. -->
+  <rect width="1024" height="1024" fill="#1b1b1a"/>
+  <g transform="translate(170 200)">
+    <rect x="0" y="0"   width="534" height="93" rx="46.5" fill="#f87171"/>
+    <rect x="0" y="130" width="425" height="93" rx="46.5" fill="#fb923c"/>
+    <rect x="0" y="260" width="329" height="93" rx="46.5" fill="#4ade80"/>
+    <rect x="0" y="390" width="206" height="93" rx="46.5" fill="#a3a19a"/>
+    <rect x="0" y="520" width="151" height="93" rx="46.5" fill="#a3a19a"/>
+  </g>
+</svg>
