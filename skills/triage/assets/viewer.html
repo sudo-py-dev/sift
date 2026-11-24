@@ -1,0 +1,916 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:; connect-src 'self';">
+<title>Sift · __TITLE__</title>
+<style>
+/* ---------- tokens ---------- */
+:root{
+  --bg:#0e0e11;--surface:#141418;--surface-2:#1b1b21;--surface-3:#23232b;--line:#26262e;--line-2:#32323c;
+  --text:#ececf1;--muted:#a1a1ab;--faint:#71717b;
+  --accent:#8f90ff;--accent-ink:#0e0e11;--accent-soft:rgba(143,144,255,.14);
+  --urgent:#ff7a7a;--urgent-soft:rgba(255,122,122,.13);
+  --wanted:#ffa45c;--wanted-soft:rgba(255,164,92,.13);
+  --review:#5fdc8f;--review-soft:rgba(95,220,143,.12);
+  --noise:#8d8d97;--noise-soft:rgba(141,141,151,.14);
+  --info:#7cc7f5;--info-soft:rgba(124,199,245,.12);
+  --focus:#b4b5ff;
+  --r1:6px;--r2:10px;--r3:14px;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --shadow:0 12px 40px rgba(0,0,0,.45);
+  color-scheme:dark;
+}
+:root[data-theme=light]{
+  --bg:#f6f6f4;--surface:#ffffff;--surface-2:#f7f7f5;--surface-3:#efefec;--line:#e7e6e1;--line-2:#d9d8d2;
+  --text:#18181b;--muted:#55555e;--faint:#80808a;
+  --accent:#4b4be0;--accent-ink:#ffffff;--accent-soft:rgba(75,75,224,.09);
+  --urgent:#c42b2b;--urgent-soft:#fdeceb;--wanted:#b4500b;--wanted-soft:#fff1e6;
+  --review:#137a3d;--review-soft:#e7f6ec;--noise:#62626b;--noise-soft:#efefec;--info:#1b62b3;--info-soft:#e8f1fb;
+  --focus:#4b4be0;--shadow:0 12px 40px rgba(20,20,30,.14);color-scheme:light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+kbd{font:11px var(--mono);padding:1px 5px;border-radius:4px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--muted);min-width:18px;display:inline-block;text-align:center}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-rows:52px 1fr;height:100vh}
+.top{display:flex;align-items:center;gap:12px;padding:0 14px;border-bottom:1px solid var(--line);background:var(--surface)}
+.brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:-.01em}
+.logo{width:22px;height:22px;display:grid;gap:2px;align-content:center}
+.logo i{display:block;height:4px;border-radius:2px}
+.logo i:nth-child(1){width:100%;background:var(--urgent)}.logo i:nth-child(2){width:78%;background:var(--wanted)}.logo i:nth-child(3){width:56%;background:var(--review)}.logo i:nth-child(4){width:34%;background:var(--noise)}
+.repo{color:var(--muted);font-weight:500;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.repo:hover{color:var(--text)}
+.search{flex:1;max-width:520px;margin-inline-start:12px;position:relative}
+.search input{width:100%;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r2);padding:7px 12px 7px 32px;outline:none}
+.search input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.search svg{position:absolute;inset-inline-start:10px;top:50%;transform:translateY(-50%);color:var(--faint)}
+.search kbd{position:absolute;inset-inline-end:8px;top:50%;transform:translateY(-50%)}
+.top .spacer{flex:1}
+.save{font-size:12.5px;color:var(--faint);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.save .dot{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.save.ok .dot{background:var(--review)}.save.busy .dot{background:var(--wanted)}.save.err{color:var(--urgent)}.save.err .dot{background:var(--urgent)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line-2);background:var(--surface-2);border-radius:var(--r1);padding:5px 10px;cursor:pointer;white-space:nowrap;min-height:30px}
+.btn:hover{background:var(--surface-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--muted)}
+.btn.ghost:hover{background:var(--surface-2);color:var(--text)}
+.btn.danger{color:var(--urgent)}
+.btn .count{background:var(--accent);color:var(--accent-ink);border-radius:999px;padding:0 7px;font-size:11.5px;font-weight:700}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.icon-btn{width:32px;height:32px;display:grid;place-items:center;border-radius:var(--r1);border:0;background:transparent;color:var(--muted);cursor:pointer}
+.icon-btn:hover{background:var(--surface-2);color:var(--text)}
+
+.main{display:grid;grid-template-columns:236px minmax(360px,1fr) minmax(420px,1.25fr);min-height:0}
+.main.reading{grid-template-columns:236px 1fr}
+
+/* sidebar */
+.side{border-inline-end:1px solid var(--line);overflow:auto;padding:12px 10px 24px;background:var(--surface)}
+.side h3{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);font-weight:600;margin:18px 10px 6px}
+.nav{display:flex;flex-direction:column;gap:1px}
+.nav button{all:unset;display:grid;grid-template-columns:16px 1fr auto auto;gap:9px;align-items:center;padding:6px 10px;border-radius:var(--r1);cursor:pointer;color:var(--muted)}
+.nav button:hover{background:var(--surface-2);color:var(--text)}
+.nav button[aria-current=true]{background:var(--surface-3);color:var(--text)}
+.nav button:focus-visible{outline:2px solid var(--focus)}
+.nav .sw{width:8px;height:8px;border-radius:2px;justify-self:center}
+.nav .n{font:12px var(--mono);color:var(--faint)}
+.nav kbd{opacity:0;transition:opacity .15s}
+.nav button:hover kbd,.nav button[aria-current=true] kbd{opacity:1}
+.chiplist{display:flex;flex-direction:column;gap:1px}
+.chiplist button{all:unset;display:flex;justify-content:space-between;gap:8px;padding:5px 10px;border-radius:var(--r1);cursor:pointer;color:var(--muted);font-size:13px}
+.chiplist button:hover{background:var(--surface-2);color:var(--text)}
+.chiplist button[aria-pressed=true]{background:var(--accent-soft);color:var(--text)}
+.chiplist button span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chiplist .n{font:12px var(--mono);color:var(--faint)}
+
+/* list */
+.listpane{display:flex;flex-direction:column;min-height:0;border-inline-end:1px solid var(--line)}
+.listhead{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);min-height:50px}
+.listhead h2{margin:0;font-size:15px;font-weight:650}
+.listhead .sub{color:var(--faint);font-size:12.5px}
+.listhead select{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r1);padding:4px 8px;font-size:12.5px;color:var(--muted)}
+.filterbar{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line)}
+.filterbar:empty{display:none}
+.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:999px;padding:2px 4px 2px 10px;font-size:12px;color:var(--muted)}
+.pill button{all:unset;cursor:pointer;width:18px;height:18px;display:grid;place-items:center;border-radius:50%}
+.pill button:hover{background:var(--surface-3)}
+.list{overflow:auto;flex:1;outline:none}
+.row{display:grid;grid-template-columns:18px 38px 1fr auto;gap:10px;align-items:start;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;position:relative}
+.row:hover{background:var(--surface)}
+.row[aria-selected=true]{background:var(--surface-2)}
+.row[aria-selected=true]::before{content:"";position:absolute;inset-inline-start:0;top:0;bottom:0;width:2px;background:var(--accent)}
+.row.decided .rt{color:var(--muted)}
+.row input{margin:3px 0 0;width:15px;height:15px;accent-color:var(--accent);cursor:pointer}
+.score{font:600 13px var(--mono);text-align:center;border-radius:var(--r1);padding:3px 0;line-height:1.25}
+.score small{display:block;font:600 9px var(--sans);letter-spacing:.06em;text-transform:uppercase;opacity:.85}
+.s-urgent{background:var(--urgent-soft);color:var(--urgent)}.s-wanted{background:var(--wanted-soft);color:var(--wanted)}
+.s-review{background:var(--review-soft);color:var(--review)}.s-noise{background:var(--noise-soft);color:var(--noise)}.s-plain{background:var(--surface-3);color:var(--muted)}
+.rt{font-weight:550;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rt .num{font:12px var(--mono);color:var(--faint);margin-inline-end:6px;font-weight:400}
+.rm{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:5px;font-size:12px;color:var(--faint)}
+.chip{font-size:11.5px;line-height:18px;padding:0 7px;border-radius:999px;background:var(--surface-3);color:var(--muted);white-space:nowrap}
+.chip.hot{background:var(--wanted-soft);color:var(--wanted)}.chip.warn{background:var(--urgent-soft);color:var(--urgent)}
+.chip.good{background:var(--review-soft);color:var(--review)}.chip.noise{background:var(--noise-soft);color:var(--noise)}
+.chip.info{background:var(--info-soft);color:var(--info)}
+.tag{font-size:11px;font-weight:650;letter-spacing:.03em;padding:2px 7px;border-radius:var(--r1);background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.tag.done{background:var(--review-soft);color:var(--review)}.tag.failed{background:var(--urgent-soft);color:var(--urgent)}
+.empty{padding:48px 24px;text-align:center;color:var(--faint)}
+.empty b{display:block;color:var(--text);font-size:15px;margin-bottom:4px}
+.cluster-h{padding:14px 14px 6px;font-size:12px;color:var(--faint);display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line);background:var(--surface)}
+.cluster-h b{color:var(--muted);font-weight:600}
+.more{padding:14px;text-align:center}
+
+/* detail */
+.detail{display:flex;flex-direction:column;min-height:0;background:var(--surface)}
+.dscroll{overflow:auto;flex:1;padding:22px 26px 26px}
+.dkicker{display:flex;gap:8px;align-items:center;color:var(--faint);font-size:12.5px;margin-bottom:8px}
+.dtitle{font-size:20px;line-height:1.3;font-weight:650;letter-spacing:-.01em;margin:0 0 8px}
+.dmeta{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.dlinks{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.meters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.meter{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r2);padding:10px 12px}
+.meter .k{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);display:flex;justify-content:space-between}
+.meter .k b{font:600 13px var(--mono);color:var(--text);letter-spacing:0}
+.bar{height:5px;border-radius:3px;background:var(--surface-3);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:3px}
+.verdict{border:1px solid var(--line-2);border-radius:var(--r3);padding:14px 16px;background:linear-gradient(180deg,var(--accent-soft),transparent 70%)}
+.verdict .vh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px;font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.verdict p{margin:0 0 4px;font-size:15px;line-height:1.5}
+.verdict .why{color:var(--muted);font-size:14px}
+.verdict .suggest{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.sec{margin-top:22px}
+.sec h4{font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:0 0 8px;font-weight:600}
+.reasons{display:flex;flex-direction:column;gap:6px}
+.reason{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:baseline;font-size:13.5px;color:var(--muted)}
+.labels{display:flex;flex-wrap:wrap;gap:6px}
+.label{font-size:12px;border:1px solid var(--line-2);border-radius:999px;padding:1px 9px;color:var(--muted)}
+.body{white-space:pre-wrap;word-break:break-word;font-size:14.5px;line-height:1.6;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r2);padding:12px 14px;max-height:360px;overflow:auto}
+.comment{border-inline-start:2px solid var(--line-2);padding:2px 0 2px 12px;margin-bottom:12px}
+.comment .ch{font-size:12.5px;color:var(--faint);margin-bottom:3px}
+.comment .ch b{color:var(--muted);font-weight:600}
+.comment .cb{white-space:pre-wrap;word-break:break-word;font-size:14px;color:var(--text)}
+.rel{display:flex;flex-direction:column;gap:4px}
+.rel button{all:unset;cursor:pointer;display:flex;gap:8px;align-items:baseline;padding:5px 8px;border-radius:var(--r1);font-size:13.5px}
+.rel button:hover{background:var(--surface-2)}
+.rel .num{font:12px var(--mono);color:var(--faint)}
+
+/* action bar + form */
+.actions{border-top:1px solid var(--line);padding:10px 14px;display:flex;gap:6px;flex-wrap:wrap;background:var(--surface);align-items:center}
+.actions .lbl{font-size:12px;color:var(--faint);margin-inline-end:4px}
+.act{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface-2);border-radius:var(--r1);padding:4px 6px 4px 9px;cursor:pointer;font-size:13px;min-height:30px}
+.act:hover{background:var(--surface-3)}
+.act.on{border-color:var(--accent);background:var(--accent-soft)}
+.act kbd{font-size:10.5px}
+.form{border-top:1px solid var(--line);padding:14px 16px;background:var(--surface-2);display:flex;flex-direction:column;gap:10px}
+.form h5{margin:0;font-size:14px}
+.form label{font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.form input[type=text],.form input[type=number],.form textarea,.form select{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r1);padding:7px 10px;outline:none;font-size:14px}
+.form textarea{min-height:72px;resize:vertical;line-height:1.45}
+.form input:focus,.form textarea:focus,.form select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.form .row2{display:flex;gap:10px;flex-wrap:wrap}
+.form .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:var(--r1);overflow:hidden}
+.form .seg label{flex-direction:row;align-items:center;gap:6px;padding:5px 10px;cursor:pointer;color:var(--text);font-size:13px}
+.form .seg label:has(input:checked){background:var(--accent-soft)}
+.form .seg input{accent-color:var(--accent)}
+.form .foot{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+.form .hint{font-size:12px;color:var(--faint);margin-inline-end:auto}
+
+/* reading views (brief, queue) */
+.reading-pane{overflow:auto;padding:28px 34px 60px}
+.reading-pane .wrap{max-width:980px}
+.hero{font-size:19px;line-height:1.55;margin:0 0 18px;max-width:72ch;letter-spacing:-.005em}
+.notes{margin:0 0 26px;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;max-width:78ch}
+.notes li{color:var(--muted);padding-inline-start:16px;position:relative}
+.notes li::before{content:"";position:absolute;inset-inline-start:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:26px}
+.tile{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r2);padding:12px 14px}
+.tile:hover{border-color:var(--line-2);background:var(--surface-2)}
+.tile:focus-visible{outline:2px solid var(--focus)}
+.tile b{display:block;font:650 26px var(--mono);letter-spacing:-.02em}
+.tile span{font-size:12.5px;color:var(--muted)}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.theme{all:unset;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:var(--r2);padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.theme:hover{border-color:var(--line-2);background:var(--surface-2)}
+.theme:focus-visible{outline:2px solid var(--focus)}
+.theme b{font-size:14.5px}
+.theme span{font-size:13px;color:var(--muted)}
+.theme .refs{font:12px var(--mono);color:var(--faint)}
+.h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint);margin:28px 0 10px;font-weight:600}
+.qtable{width:100%;border-collapse:collapse;font-size:13.5px}
+.qtable th{text-align:start;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg)}
+.qtable td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+.qtable td.t{max-width:380px}
+.qtable .cmd{font:12px var(--mono);color:var(--muted);white-space:pre-wrap;word-break:break-all;margin-top:4px}
+.qtable .note{font-size:12.5px;color:var(--info);margin-top:4px}
+.instr{width:100%;min-height:90px;background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r2);padding:10px 12px;outline:none;resize:vertical;line-height:1.5}
+.instr:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.handoff{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:var(--r3);padding:14px 16px;margin:16px 0}
+.handoff code{font:13px var(--mono);background:var(--surface-3);padding:3px 8px;border-radius:var(--r1)}
+.handoff p{margin:0;color:var(--muted);flex:1;min-width:240px}
+
+/* overlays */
+.toast{position:fixed;bottom:18px;left:50%;transform:translate(-50%,8px);background:var(--text);color:var(--bg);padding:8px 14px;border-radius:var(--r2);font-size:13px;opacity:0;transition:opacity .16s,transform .16s;pointer-events:none;z-index:50;display:flex;gap:10px;align-items:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+dialog{border:1px solid var(--line-2);border-radius:var(--r3);background:var(--surface);color:var(--text);padding:0;box-shadow:var(--shadow);width:min(640px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg{padding:18px 20px}
+.dlg h3{margin:0 0 12px;font-size:16px}
+.keys{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;font-size:13.5px}
+.keys div{display:flex;justify-content:space-between;gap:10px;color:var(--muted)}
+.keys h6{grid-column:1/-1;margin:10px 0 2px;font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--faint)}
+
+@media (max-width:1100px){.main{grid-template-columns:200px 1fr}.main .detail{display:none}.main.detail-open{grid-template-columns:200px 0 1fr}.main.detail-open .listpane{display:none}.main.detail-open .detail{display:flex}}
+@media (max-width:720px){.main,.main.detail-open{grid-template-columns:1fr}.side{display:none}.search{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Sift</div>
+    <a class="repo" id="repo" target="_blank" rel="noopener noreferrer"></a>
+    <div class="search" role="search">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="Search titles, authors, labels, notes, #number" aria-label="Search" autocomplete="off">
+      <kbd>/</kbd>
+    </div>
+    <span class="spacer"></span>
+    <span class="save" id="save" role="status" aria-live="polite"><span class="dot"></span><span id="saveText"></span></span>
+    <button class="btn" id="queueBtn" title="Queued actions (q)">Queue <span class="count" id="qcount">0</span></button>
+    <button class="icon-btn" id="theme" aria-label="Switch light or dark theme" title="Theme (t)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+    <button class="icon-btn" id="help" aria-label="Keyboard shortcuts" title="Shortcuts (?)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17h.01"/></svg>
+    </button>
+  </header>
+  <div class="main" id="main">
+    <nav class="side" aria-label="Views">
+      <div class="nav" id="nav"></div>
+      <h3 id="themesH">Themes</h3>
+      <div class="chiplist" id="themeList"></div>
+      <h3>Hot labels</h3>
+      <div class="chiplist" id="labelList"></div>
+    </nav>
+    <section class="listpane" aria-label="Items">
+      <div class="listhead"><div><h2 id="viewTitle"></h2><div class="sub" id="viewSub"></div></div><span class="spacer" style="flex:1"></span>
+        <select id="sort" aria-label="Sort"><option value="rank">Rank</option><option value="reactions">Most 👍</option><option value="newest">Newest</option><option value="oldest">Oldest</option><option value="quiet">Longest quiet</option></select>
+      </div>
+      <div class="filterbar" id="filters"></div>
+      <div class="list" id="list" role="listbox" tabindex="0" aria-label="Items"></div>
+    </section>
+    <section class="detail" id="detail" aria-label="Details"></section>
+    <section class="reading-pane" id="reading" hidden></section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="helpDlg"><div class="dlg">
+  <h3>Keyboard</h3>
+  <div class="keys">
+    <h6>Move</h6>
+    <div>Next / previous <span><kbd>j</kbd> <kbd>k</kbd></span></div><div>Search <kbd>/</kbd></div>
+    <div>Views <span><kbd>1</kbd>–<kbd>9</kbd></span></div><div>Open on GitHub <kbd>o</kbd></div>
+    <div>Select for bulk <kbd>x</kbd></div><div>Select all shown <span><kbd>shift</kbd> <kbd>x</kbd></span></div>
+    <h6>Queue an action</h6>
+    <div>Accept Claude's suggestion <kbd>y</kbd></div><div>Close <kbd>c</kbd></div>
+    <div>Duplicate of… <kbd>d</kbd></div><div>Comment <kbd>m</kbd></div>
+    <div>Ask for repro <kbd>r</kbd></div><div>Labels <kbd>l</kbd></div>
+    <div>Not noise: keep <kbd>s</kbd></div><div>Watch <kbd>w</kbd></div>
+    <div>Mark urgent <kbd>u</kbd></div><div>PR: approve / merge <span><kbd>a</kbd> <kbd>g</kbd></span></div>
+    <div>PR: nudge author <kbd>n</kbd></div><div>Undo on this item <kbd>z</kbd></div>
+    <h6>Other</h6>
+    <div>Queue <kbd>q</kbd></div><div>Theme <kbd>t</kbd></div>
+    <div>Submit a form <span><kbd>ctrl</kbd> <kbd>enter</kbd></span></div><div>Close / cancel <kbd>esc</kbd></div>
+  </div>
+  <p style="color:var(--muted);font-size:13px;margin:16px 0 0">Nothing here changes GitHub. Queued actions go to <code>decisions.json</code>; in Claude Code, run <code>/sift:apply</code> to review and apply them.</p>
+  <div style="text-align:end;margin-top:14px"><button class="btn" id="helpClose">Close</button></div>
+</div></dialog>
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(() => {
+'use strict';
+const D = JSON.parse(document.getElementById('data').textContent);
+const $ = (s, r = document) => r.querySelector(s);
+const h = (tag, props = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat(Infinity)) if (c != null && c !== false) n.append(c instanceof Node ? c : String(c));
+  return n;
+};
+const safeUrl = (u) => (/^https:\/\/github\.com\//.test(u || '') ? u : '#');
+const ago = (d) => d < 1 ? 'today' : d < 2 ? '1 day' : d < 60 ? `${Math.round(d)} days` : d < 730 ? `${Math.round(d / 30)} mo` : `${(d / 365).toFixed(1)} yr`;
+const daysSince = (iso) => (Date.now() - new Date(iso)) / 864e5;
+const fmt = (n) => Number(n || 0).toLocaleString();
+const slug = D.repo.slug;
+const ITEMS = D.items;
+const byKey = new Map(ITEMS.map((x) => [x.key, x]));
+const issueNo = new Map(ITEMS.filter((x) => x.kind === 'issue').map((x) => [x.number, x]));
+const prNo = new Map(ITEMS.filter((x) => x.kind === 'pr').map((x) => [x.number, x]));
+const clusterOf = new Map();
+D.clusters.forEach((c, i) => c.members.forEach((n) => clusterOf.set(n, i)));
+
+// ---------- theme ----------
+const root = document.documentElement;
+const savedTheme = localStorage.getItem('sift:theme');
+root.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+const toggleTheme = () => { root.dataset.theme = root.dataset.theme === 'light' ? 'dark' : 'light'; localStorage.setItem('sift:theme', root.dataset.theme); };
+$('#theme').onclick = toggleTheme;
+
+// ---------- decisions (queue) ----------
+const ACTIONS = {
+  issue: { close: 'Close', duplicate: 'Duplicate', comment: 'Comment', 'needs-repro': 'Ask for repro', label: 'Labels', keep: 'Keep', watch: 'Watch', escalate: 'Mark urgent' },
+  pr: { merge: 'Merge', approve: 'Approve', close: 'Close', comment: 'Comment', nudge: 'Nudge author', label: 'Labels', keep: 'Keep', watch: 'Watch' },
+};
+const LOCAL_ONLY = new Set(['keep', 'watch', 'escalate']);
+const DEFAULT_TEXT = {
+  'needs-repro': 'Thanks for the report. Could you share a minimal reproduction, the exact version you are using, and your OS? We will take another look once we can reproduce it.',
+  nudge: 'Are you still working on this? It needs a rebase and green checks before it can be reviewed. Let us know if you would like someone else to pick it up.',
+  stale: 'Closing as stale. Please open a new issue if this still affects you on the latest version.',
+  stalePR: 'Closing as inactive to keep the PR queue manageable. Thanks for the work here; feel free to reopen if you pick it back up.',
+};
+const store = { decisions: { ...(D.decisions?.decisions || {}) }, instructions: D.decisions?.instructions || '' };
+const served = location.protocol.startsWith('http');
+const apiUrl = `/api/decisions/${encodeURIComponent(D.dir)}`;
+const LS = `sift:decisions:${slug}`;
+let mode = 'local';
+let saveTimer = null;
+
+function setSave(cls, text) { const s = $('#save'); s.className = 'save ' + cls; $('#saveText').textContent = text; }
+async function loadStore() {
+  if (served) {
+    try {
+      const r = await fetch(apiUrl, { headers: { accept: 'application/json' } });
+      if (r.ok) { const d = await r.json(); store.decisions = d.decisions || {}; store.instructions = d.instructions || ''; mode = 'server'; setSave('ok', 'Saved to decisions.json'); return; }
+    } catch {}
+  }
+  const ls = JSON.parse(localStorage.getItem(LS) || 'null');
+  if (ls) { for (const [k, v] of Object.entries(ls.decisions || {})) if (!store.decisions[k] || store.decisions[k].status === 'pending') store.decisions[k] = v; store.instructions = ls.instructions || store.instructions; }
+  setSave('', 'Saved in this browser');
+}
+function persist() {
+  localStorage.setItem(LS, JSON.stringify(store));
+  updateCount();
+  if (mode !== 'server') { setSave('', 'Saved in this browser'); return; }
+  setSave('busy', 'Saving…');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      const r = await fetch(apiUrl, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ repo: slug, instructions: store.instructions, decisions: store.decisions }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j.error || r.status);
+      setSave('ok', 'Saved to decisions.json');
+    } catch (e) { setSave('err', `Not saved: ${e.message}`); }
+  }, 350);
+}
+const pendingCount = () => Object.values(store.decisions).filter((d) => d.status === 'pending').length;
+function updateCount() { $('#qcount').textContent = pendingCount(); const q = navBtns.get('queue'); if (q) q.querySelector('.n').textContent = pendingCount() || ''; }
+
+let lastQueued = [];
+function queue(keys, action, fields = {}) {
+  const added = [];
+  for (const key of keys) {
+    const x = byKey.get(key);
+    if (!x || !ACTIONS[x.kind][action]) continue;
+    store.decisions[key] = { action, kind: x.kind, number: x.number, title: x.title, status: 'pending', at: new Date().toISOString(), ...fields };
+    added.push(key);
+  }
+  if (!added.length) { toast(`“${action}” doesn’t apply to ${keys.length > 1 ? 'these items' : 'this item'}`); return; }
+  lastQueued = added;
+  const idx = listCache.findIndex((x) => x.key === state.id);
+  persist();
+  toast(`${ACTIONS[byKey.get(added[0]).kind][action]} queued${added.length > 1 ? ` for ${added.length} items` : ''}`, 'Undo', () => { added.forEach((k) => delete store.decisions[k]); persist(); render(); });
+  selection.clear();
+  render();
+  if (!added.includes(state.id) || added.length > 1 || V[state.view].reading) return;
+  // Inbox flow: go to the next item. If the action moved this one out of the list, the next one is now at its old place.
+  if (listCache.some((x) => x.key === state.id)) move(1);
+  else if (listCache.length) select(listCache[Math.min(Math.max(idx, 0), listCache.length - 1)].key);
+}
+function unqueue(key) { if (store.decisions[key]?.status === 'pending') { delete store.decisions[key]; persist(); toast('Removed from queue'); render(); } }
+
+// Local decisions change where items show up right away.
+function effective(x) {
+  const d = store.decisions[x.key];
+  if (!d) return x;
+  if (d.action === 'escalate') return { ...x, bucket: 'attention', lane: x.kind === 'issue' ? 'urgent' : x.lane };
+  if (d.action === 'keep' && x.bucket === 'noise') return { ...x, bucket: 'watch' };
+  if (d.action === 'watch') return { ...x, bucket: 'watch' };
+  return x;
+}
+
+// ---------- views ----------
+const VIEWS = [
+  { id: 'brief', name: 'Brief', color: 'var(--accent)', reading: true },
+  { id: 'urgent', name: 'Urgent', color: 'var(--urgent)', test: (x) => x.kind === 'issue' && x.bucket === 'attention' && x.lane === 'urgent', rank: (x) => x.urgency, sub: 'Severe, active now, or unanswered by the team' },
+  { id: 'wanted', name: 'Most wanted', color: 'var(--wanted)', test: (x) => x.kind === 'issue' && x.bucket === 'attention' && x.lane !== 'urgent', rank: (x) => x.demand, sub: 'What the most people are asking for' },
+  { id: 'prs', name: 'PRs to review', color: 'var(--review)', test: (x) => x.kind === 'pr' && x.bucket === 'attention', rank: (x) => (x.status === 'ready' ? 100 : 0) + x.attention, sub: 'Ready to merge, contributors waiting, fixes for hot issues' },
+  { id: 'dupes', name: 'Duplicates', color: 'var(--info)', sub: 'Look-alike issues; the one to keep is marked' },
+  { id: 'noise', name: 'Noise', color: 'var(--noise)', test: (x) => x.bucket === 'noise', rank: (x) => x.noise * 1000 - x.idle, sub: 'Probably not worth a maintainer’s time as it stands' },
+  { id: 'watch', name: 'Watch', color: 'var(--faint)', test: (x) => x.bucket === 'watch', rank: (x) => x.attention, sub: 'Real, but not pressing' },
+  { id: 'all', name: 'Everything', color: 'var(--line-2)', test: () => true, rank: (x) => x.attention, sub: 'Every fetched issue and PR' },
+  { id: 'queue', name: 'Queue', color: 'var(--accent)', reading: true },
+];
+const V = Object.fromEntries(VIEWS.map((v) => [v.id, v]));
+const state = { view: 'brief', id: null, q: '', label: '', theme: -1, sort: 'rank', limit: 120 };
+const selection = new Set();
+
+// URL holds view, item, search and filters so a reload (or a shared link) lands in the same place.
+function readHash() {
+  const p = new URLSearchParams(location.hash.slice(1));
+  if (V[p.get('view')]) state.view = p.get('view');
+  state.id = p.get('id'); state.q = p.get('q') || ''; state.label = p.get('label') || ''; state.theme = Number(p.get('theme') ?? -1);
+}
+function writeHash() {
+  const p = new URLSearchParams();
+  p.set('view', state.view);
+  if (state.id) p.set('id', state.id);
+  if (state.q) p.set('q', state.q);
+  if (state.label) p.set('label', state.label);
+  if (state.theme >= 0) p.set('theme', state.theme);
+  history.replaceState(null, '', '#' + p);
+}
+
+const navBtns = new Map();
+VIEWS.forEach((v, i) => {
+  const b = h('button', { 'data-v': v.id, onclick: () => go(v.id) }, h('span', { class: 'sw', style: `background:${v.color}` }), h('span', { text: v.name }), h('span', { class: 'n' }), h('kbd', { text: i + 1 }));
+  navBtns.set(v.id, b);
+  $('#nav').append(b);
+});
+function counts() {
+  const eff = ITEMS.map(effective);
+  for (const v of VIEWS) {
+    let n = '';
+    if (v.test) n = eff.filter(v.test).length;
+    if (v.id === 'dupes') n = D.clusters.length;
+    if (v.id === 'queue') n = pendingCount() || '';
+    navBtns.get(v.id).querySelector('.n').textContent = n === '' ? '' : fmt(n);
+  }
+}
+// Themes and labels filter the current list.
+const themes = D.brief?.themes || [];
+const themeKeys = themes.map((t) => new Set((t.items || []).map((r) => { const n = Number(String(r).replace(/\D/g, '')); return (issueNo.get(n) || prNo.get(n))?.key; }).filter(Boolean)));
+if (!themes.length) $('#themesH').hidden = true;
+themes.forEach((t, i) => $('#themeList').append(h('button', { 'aria-pressed': 'false', 'data-i': i, onclick: () => { state.theme = state.theme === i ? -1 : i; if (V[state.view].reading || state.view === 'dupes') state.view = 'all'; state.limit = 120; render(); } }, h('span', { text: t.title }), h('span', { class: 'n', text: themeKeys[i].size }))));
+(D.labelHotspots || []).forEach((l) => $('#labelList').append(h('button', { 'aria-pressed': 'false', 'data-l': l.label, onclick: () => { state.label = state.label === l.label ? '' : l.label; if (V[state.view].reading || state.view === 'dupes') state.view = 'all'; state.limit = 120; render(); } }, h('span', { text: l.label }), h('span', { class: 'n', text: l.count }))));
+
+function go(view) { state.view = view; state.limit = 120; selection.clear(); if (!V[view].reading) state.id = null; render(); if (!V[view].reading) $('#list').focus({ preventScroll: true }); }
+
+// ---------- list ----------
+function currentList() {
+  const v = V[state.view];
+  let out;
+  if (state.view === 'dupes') {
+    out = [];
+    D.clusters.forEach((c) => c.members.map((n) => issueNo.get(n)).filter(Boolean).sort((a, b) => (b.number === c.keep) - (a.number === c.keep)).forEach((x) => out.push(effective(x))));
+  } else out = ITEMS.map(effective).filter(v.test);
+  if (state.theme >= 0) out = out.filter((x) => themeKeys[state.theme].has(x.key));
+  if (state.label) out = out.filter((x) => x.labels.includes(state.label));
+  const q = state.q.trim().toLowerCase();
+  if (q) {
+    const num = /^#?(\d+)$/.exec(q);
+    out = out.filter((x) => num ? String(x.number).startsWith(num[1]) : `${x.title} ${x.author} ${x.labels.join(' ')} ${x.verdict?.summary || ''} ${x.verdict?.why || ''} ${x.excerpt || ''}`.toLowerCase().includes(q));
+  }
+  if (state.view === 'dupes' && state.sort === 'rank') return out;
+  const S = { rank: (a, b) => (v.rank ? v.rank(b) - v.rank(a) : 0), reactions: (a, b) => b.reactions - a.reactions, newest: (a, b) => a.age - b.age, oldest: (a, b) => b.age - a.age, quiet: (a, b) => b.idle - a.idle };
+  return out.slice().sort(S[state.sort] || S.rank);
+}
+function scoreCell(x) {
+  if (x.bucket === 'noise') return h('div', { class: 'score s-noise', title: `Noise ${x.noise}/100` }, x.noise, h('small', { text: 'noise' }));
+  if (x.kind === 'pr') return h('div', { class: 'score s-review', title: `Review priority ${x.attention}/100` }, x.status === 'ready' ? '✓' : x.attention, h('small', { text: x.status === 'ready' ? 'ready' : 'PR' }));
+  if (x.bucket === 'attention' && x.lane === 'urgent') { const n = Math.max(x.urgency, x.attention); return h('div', { class: 'score s-urgent', title: `Urgency ${n}/100` }, n, h('small', { text: 'urgent' })); }
+  if (x.bucket === 'attention') { const n = Math.max(x.demand, x.attention); return h('div', { class: 'score s-wanted', title: `Demand ${n}/100` }, n, h('small', { text: 'wanted' })); }
+  return h('div', { class: 'score s-plain', title: `Score ${x.attention}/100` }, x.attention, h('small', { text: x.kind === 'pr' ? 'PR' : 'score' }));
+}
+function decisionTag(x) {
+  const d = store.decisions[x.key];
+  if (!d) return null;
+  const name = ACTIONS[x.kind][d.action] || d.action;
+  if (d.status === 'done') return h('span', { class: 'tag done', text: `${name} ✓` });
+  if (d.status === 'failed') return h('span', { class: 'tag failed', text: `${name} failed` });
+  return h('span', { class: 'tag', text: d.action === 'duplicate' ? `Dup of #${d.of}` : name });
+}
+function rowEl(x, i) {
+  const cb = h('input', { type: 'checkbox', 'aria-label': `Select #${x.number}`, tabindex: -1, onclick: (e) => { e.stopPropagation(); toggleSel(x.key); } });
+  cb.checked = selection.has(x.key);
+  const top = x.signals.filter((s) => s.tone !== 'info').slice(0, 3);
+  return h('div', { class: 'row' + (store.decisions[x.key] ? ' decided' : ''), role: 'option', id: 'r-' + x.key, 'data-k': x.key, 'aria-selected': String(state.id === x.key), onclick: () => select(x.key) },
+    cb, scoreCell(x),
+    h('div', {},
+      h('div', { class: 'rt', dir: 'auto' }, h('span', { class: 'num', text: (x.kind === 'pr' ? '!' : '#') + x.number }), x.title),
+      h('div', { class: 'rm' }, top.map((s) => h('span', { class: `chip ${s.tone}`, title: s.why, text: s.t })), h('span', { text: `${ago(x.idle)} quiet` }), x.reactions ? h('span', { text: `· ${fmt(x.reactions)} 👍` }) : null)),
+    decisionTag(x));
+}
+let listCache = [];
+function renderList() {
+  const list = $('#list');
+  listCache = currentList();
+  list.textContent = '';
+  const v = V[state.view];
+  $('#viewTitle').textContent = v.name;
+  $('#viewSub').textContent = `${fmt(listCache.length)} ${listCache.length === 1 ? 'item' : 'items'} · ${v.sub || ''}`;
+  if (!listCache.length) {
+    list.append(h('div', { class: 'empty' }, h('b', { text: state.q || state.label || state.theme >= 0 ? 'No matches' : 'Nothing here' }), state.q || state.label || state.theme >= 0 ? 'Clear the search or filters to see more.' : 'This list is clear.'));
+    return;
+  }
+  const frag = document.createDocumentFragment();
+  let lastCluster = -1;
+  listCache.slice(0, state.limit).forEach((x, i) => {
+    if (state.view === 'dupes') {
+      const ci = clusterOf.get(x.number);
+      if (ci !== lastCluster) {
+        lastCluster = ci;
+        const c = D.clusters[ci];
+        const label = { duplicates: 'Confirmed duplicates', related: 'Related, not duplicates', '': 'Not reviewed yet' }[c.verdict] ?? c.verdict;
+        const closers = c.members.filter((n) => n !== c.keep).map((n) => issueNo.get(n)?.key).filter(Boolean);
+        frag.append(h('div', { class: 'cluster-h' }, h('span', {}, h('b', { text: label }), c.summary ? ` · ${c.summary}` : ''),
+          c.verdict === 'duplicates' && closers.some((k) => !store.decisions[k]) ? h('button', { class: 'btn', onclick: (e) => { e.stopPropagation(); queue(closers, 'duplicate', { of: c.keep }); } }, `Queue ${closers.length} as dup of #${c.keep}`) : null));
+      }
+    }
+    frag.append(rowEl(x, i));
+  });
+  list.append(frag);
+  if (listCache.length > state.limit) list.append(h('div', { class: 'more' }, h('button', { class: 'btn', onclick: () => { state.limit += 300; renderList(); } }, `Show ${fmt(Math.min(300, listCache.length - state.limit))} more of ${fmt(listCache.length - state.limit)}`)));
+}
+function renderFilters() {
+  const f = $('#filters');
+  f.textContent = '';
+  const pill = (text, clear) => h('span', { class: 'pill' }, text, h('button', { 'aria-label': `Remove filter ${text}`, onclick: clear, text: '×' }));
+  if (state.theme >= 0) f.append(pill(`Theme: ${themes[state.theme].title}`, () => { state.theme = -1; render(); }));
+  if (state.label) f.append(pill(`Label: ${state.label}`, () => { state.label = ''; render(); }));
+  if (selection.size) f.append(h('span', { class: 'pill', style: 'border-color:var(--accent);color:var(--text)' }, `${selection.size} selected · actions apply to all`, h('button', { 'aria-label': 'Clear selection', onclick: () => { selection.clear(); render(); }, text: '×' })));
+  document.querySelectorAll('#themeList button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.i) === state.theme)));
+  document.querySelectorAll('#labelList button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.l === state.label)));
+}
+function toggleSel(key) { selection.has(key) ? selection.delete(key) : selection.add(key); renderFilters(); const r = $('#r-' + CSS.escape(key)); if (r) r.querySelector('input').checked = selection.has(key); renderDetail(); }
+
+function select(key, { scroll = true } = {}) {
+  const prev = state.id;
+  state.id = key;
+  formOpen = null;
+  if (prev) $('#r-' + CSS.escape(prev))?.setAttribute('aria-selected', 'false');
+  const r = $('#r-' + CSS.escape(key));
+  if (r) { r.setAttribute('aria-selected', 'true'); if (scroll) r.scrollIntoView({ block: 'nearest' }); $('#list').setAttribute('aria-activedescendant', r.id); }
+  $('#main').classList.add('detail-open');
+  renderDetail();
+  writeHash();
+}
+function move(delta) {
+  if (!listCache.length) return;
+  let i = listCache.findIndex((x) => x.key === state.id);
+  i = i < 0 ? 0 : Math.max(0, Math.min(listCache.length - 1, i + delta));
+  if (i >= state.limit) { state.limit = i + 60; renderList(); }
+  select(listCache[i].key);
+}
+
+// ---------- detail ----------
+let formOpen = null;
+const SUGGEST = {
+  'close-duplicate': (x, v) => ['duplicate', { of: v.duplicateOf || x.dupOf || '' , text: '' }],
+  'close-stale': (x) => ['close', { reason: 'not planned', text: x.kind === 'pr' ? DEFAULT_TEXT.stalePR : DEFAULT_TEXT.stale }],
+  'close-not-planned': (x, v) => ['close', { reason: 'not planned', text: v.comment || '' }],
+  'close-completed': (x, v) => ['close', { reason: 'completed', text: v.comment || '' }],
+  'needs-repro': (x, v) => ['needs-repro', { text: v.comment || DEFAULT_TEXT['needs-repro'] }],
+  respond: () => ['comment', { text: '' }],
+  'nudge-author': (x, v) => ['nudge', { text: v.comment || DEFAULT_TEXT.nudge }],
+  merge: () => ['merge', { method: 'squash' }],
+  close: (x, v) => ['close', { text: v.comment || (x.idle > 180 ? DEFAULT_TEXT.stalePR : '') }],
+  'keep-watching': () => ['watch', {}],
+};
+const SUGGEST_LABEL = { duplicate: (f) => `Close as duplicate${f.of ? ` of #${f.of}` : ''}`, close: (f) => f.reason === 'completed' ? 'Close as completed' : 'Close as not planned', 'needs-repro': () => 'Ask for a reproduction', comment: () => 'Write a reply', nudge: () => 'Nudge the author', merge: () => 'Merge (squash)', watch: () => 'Move to Watch', approve: () => 'Approve' };
+
+function meter(label, value, color, shown) { return h('div', { class: 'meter' }, h('div', { class: 'k' }, label, h('b', { text: shown ?? value })), h('div', { class: 'bar' }, h('i', { style: `width:${Math.max(2, value)}%;background:${color}` }))); }
+function jumpBtn(x, note) { return h('button', { onclick: () => { if (!listCache.some((y) => y.key === x.key)) { state.view = 'all'; state.q = ''; $('#q').value = ''; state.theme = -1; state.label = ''; renderList(); renderFilters(); syncNav(); } select(x.key); } }, h('span', { class: 'num', text: (x.kind === 'pr' ? '!' : '#') + x.number }), h('span', { dir: 'auto', text: x.title }), note ? h('span', { class: 'num', text: note }) : null); }
+
+function renderDetail() {
+  const pane = $('#detail');
+  pane.textContent = '';
+  const keys = selection.size ? [...selection] : state.id ? [state.id] : [];
+  if (selection.size > 1) {
+    pane.append(h('div', { class: 'dscroll' }, h('div', { class: 'empty', style: 'text-align:start;padding:8px 0' }, h('b', { text: `${selection.size} items selected` }), 'Actions below apply to every selected item. Press x on an item to add or remove it.'),
+      h('div', { class: 'rel', style: 'margin-top:12px' }, [...selection].slice(0, 40).map((k) => byKey.get(k)).filter(Boolean).map((x) => jumpBtn(x)))));
+    pane.append(...actionArea(keys));
+    return;
+  }
+  const x0 = byKey.get(state.id);
+  if (!x0) { pane.append(h('div', { class: 'dscroll' }, h('div', { class: 'empty' }, h('b', { text: 'Pick an item' }), 'Use j and k to move through the list. Press ? for every shortcut.'))); return; }
+  const x = effective(x0);
+  const v = x.verdict || {};
+  const d = store.decisions[x.key];
+  const kindLabel = x.kind === 'pr' ? (x.draft ? 'Draft PR' : 'Pull request') : 'Issue';
+  const sc = h('div', { class: 'dscroll' },
+    h('div', { class: 'dkicker' }, scoreCell(x), h('span', { text: `${kindLabel} · ${({ attention: x.kind === 'pr' ? 'To review' : x.lane === 'urgent' ? 'Urgent' : 'Most wanted', watch: 'Watch', backlog: 'Backlog', noise: 'Noise', bots: 'Bot PR' })[x.bucket] || x.bucket}` }), decisionTag(x)),
+    h('h1', { class: 'dtitle', dir: 'auto' }, h('span', { class: 'mono', style: 'color:var(--faint);font-weight:400;margin-inline-end:8px', text: (x.kind === 'pr' ? '!' : '#') + x.number }), x.title),
+    h('div', { class: 'dmeta' },
+      h('span', { text: `${x.author}${x.assoc && x.assoc !== 'NONE' ? ` (${x.assoc.toLowerCase().replace(/_/g, ' ')})` : ''}` }),
+      h('span', { text: `opened ${ago(x.age)} ago` }), h('span', { text: `last activity ${ago(x.idle)} ago` }),
+      h('span', { text: `${fmt(x.commentCount)} comments` }), h('span', { text: `${fmt(x.reactions)} 👍 · ${fmt(x.participants)} people` }),
+      x.kind === 'pr' ? h('span', { class: 'mono', text: `+${fmt(x.additions)} −${fmt(x.deletions)} · checks ${String(x.checks || '').toLowerCase()}` }) : null,
+      x.milestone ? h('span', { text: `milestone ${x.milestone}` }) : null),
+    h('div', { class: 'dlinks' }, h('a', { class: 'btn', href: safeUrl(x.url), target: '_blank', rel: 'noopener noreferrer' }, 'Open on GitHub ↗', h('kbd', { text: 'o' })), d?.status === 'pending' ? h('button', { class: 'btn ghost', onclick: () => unqueue(x.key) }, 'Remove from queue', h('kbd', { text: 'z' })) : null),
+    h('div', { class: 'meters' }, x.kind === 'pr'
+      ? [meter('Review priority', x.attention, 'var(--review)'), meter('Size', Math.min(100, Math.round(Math.log10(1 + (x.size || 0)) * 25)), 'var(--info)', `${fmt(x.size)} lines`), meter('Noise', x.noise, 'var(--noise)')]
+      : [meter('Urgency', x.urgency, 'var(--urgent)'), meter('Demand', x.demand, 'var(--wanted)'), meter('Noise', x.noise, 'var(--noise)')]),
+  );
+  if (v.summary || v.why) {
+    const sug = v.action && SUGGEST[v.action] ? SUGGEST[v.action](x, v) : null;
+    const can = sug && ACTIONS[x.kind][sug[0]];
+    sc.append(h('div', { class: 'verdict' },
+      h('div', { class: 'vh' }, h('span', { text: 'Claude’s read' }), v.action ? h('span', { class: 'tag', text: v.action.replace(/-/g, ' ') }) : null),
+      v.summary ? h('p', { dir: 'auto', text: v.summary }) : null,
+      v.why ? h('div', { class: 'why', dir: 'auto', text: v.why }) : null,
+      v.action === 'review' && x.kind === 'pr' ? h('div', { class: 'suggest' }, h('a', { class: 'btn primary', href: safeUrl(x.url) + '/files', target: '_blank', rel: 'noopener noreferrer' }, 'Review the changes ↗', h('kbd', { text: 'y', style: 'background:transparent;border-color:currentColor;color:inherit' })), h('span', { style: 'color:var(--faint);font-size:12.5px', text: 'Then approve (a), merge (g) or comment (m) here.' })) : null,
+      can ? h('div', { class: 'suggest' }, h('button', { class: 'btn primary', onclick: () => acceptSuggestion(x) }, SUGGEST_LABEL[sug[0]](sug[1]), h('kbd', { text: 'y', style: 'background:transparent;border-color:currentColor;color:inherit' })), h('span', { style: 'color:var(--faint);font-size:12.5px', text: 'You review the text before it is queued.' })) : null));
+  }
+  sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Why it’s here' }), h('div', { class: 'reasons' }, x.signals.length ? x.signals.map((s) => h('div', { class: 'reason' }, h('span', { class: `chip ${s.tone}`, text: s.t }), h('span', { text: s.why }))) : h('span', { style: 'color:var(--faint)', text: 'No strong signals either way.' }))));
+  if (x.labels.length) sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Labels' }), h('div', { class: 'labels' }, x.labels.map((l) => h('span', { class: 'label', text: l })))));
+  // Related: duplicates, linked PRs, issues this PR closes.
+  const rel = [];
+  const ci = clusterOf.get(x.number);
+  if (x.kind === 'issue' && ci != null) {
+    const c = D.clusters[ci];
+    c.members.filter((n) => n !== x.number).map((n) => issueNo.get(n)).filter(Boolean).forEach((y) => rel.push(jumpBtn(y, y.number === c.keep ? 'keep' : c.verdict === 'duplicates' ? 'duplicate' : 'look-alike')));
+    if (c.keep !== x.number && c.verdict === 'duplicates' && !d) rel.push(h('div', { style: 'margin:6px 8px' }, h('button', { class: 'btn', onclick: () => queue([x.key], 'duplicate', { of: c.keep }) }, `Queue: duplicate of #${c.keep}`)));
+  }
+  (x.linkedPRs || []).map((n) => prNo.get(n)).filter(Boolean).forEach((y) => rel.push(jumpBtn(y, 'fix in progress')));
+  (x.closesIssues || []).map((n) => issueNo.get(n)).filter(Boolean).forEach((y) => rel.push(jumpBtn(y, 'closes')));
+  if (rel.length) sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Related' }), h('div', { class: 'rel' }, rel)));
+  sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Description' }), x.body ? h('div', { class: 'body', dir: 'auto', text: x.body }) : h('div', { style: 'color:var(--faint)', text: 'No description.' })));
+  if (x.comments?.length) sc.append(h('div', { class: 'sec' }, h('h4', { text: `Latest comments (${x.comments.length} of ${fmt(x.commentCount)})` }),
+    x.comments.map((c) => h('div', { class: 'comment' }, h('div', { class: 'ch' }, h('b', { text: c.author }), ` ${c.assoc && c.assoc !== 'NONE' ? c.assoc.toLowerCase() + ' · ' : ''}${ago(daysSince(c.at))} ago`), h('div', { class: 'cb', dir: 'auto', text: c.body })))));
+  if (d?.note || (d && d.status !== 'pending')) sc.append(h('div', { class: 'sec' }, h('h4', { text: 'Your queued action' }), h('div', { style: 'color:var(--muted)' }, `${ACTIONS[x.kind][d.action]} · ${d.status}${d.result ? ` · ${d.result}` : ''}`, d.note ? h('div', { style: 'color:var(--info);margin-top:4px', text: `Note to Claude: ${d.note}` }) : null)));
+  pane.append(sc, ...actionArea(keys));
+}
+
+// The action bar and its inline form. Works for one item or a bulk selection.
+const KEYMAP = { c: 'close', d: 'duplicate', m: 'comment', r: 'needs-repro', l: 'label', s: 'keep', w: 'watch', u: 'escalate', a: 'approve', g: 'merge', n: 'nudge' };
+const KEYOF = Object.fromEntries(Object.entries(KEYMAP).map(([k, a]) => [a, k]));
+const NEEDS_FORM = new Set(['close', 'duplicate', 'comment', 'needs-repro', 'label', 'approve', 'merge', 'nudge']);
+function kindsOf(keys) { return new Set(keys.map((k) => byKey.get(k)?.kind).filter(Boolean)); }
+function allowed(keys) {
+  const kinds = kindsOf(keys);
+  const acts = Object.keys(ACTIONS.issue).concat(Object.keys(ACTIONS.pr)).filter((a, i, arr) => arr.indexOf(a) === i);
+  return acts.filter((a) => [...kinds].every((k) => ACTIONS[k][a]) && !(a === 'duplicate' && keys.length > 1 && !keys.every((k) => byKey.get(k)?.dupOf)));
+}
+function actionArea(keys) {
+  if (!keys.length) return [];
+  const acts = allowed(keys);
+  const bar = h('div', { class: 'actions', role: 'toolbar', 'aria-label': 'Queue an action' }, h('span', { class: 'lbl', text: keys.length > 1 ? `For ${keys.length}:` : 'Queue:' }),
+    acts.map((a) => h('button', { class: 'act' + (formOpen?.action === a ? ' on' : ''), onclick: () => startAction(a), title: LOCAL_ONLY.has(a) ? 'Changes only this report, not GitHub' : 'Queued for Claude to apply on GitHub' }, (ACTIONS.issue[a] || ACTIONS.pr[a]), h('kbd', { text: KEYOF[a] }))));
+  return formOpen ? [formEl(keys), bar] : [bar];
+}
+function startAction(action, preset = {}) {
+  const keys = selection.size ? [...selection] : state.id ? [state.id] : [];
+  if (!keys.length || !allowed(keys).includes(action)) return;
+  if (!NEEDS_FORM.has(action)) { queue(keys, action, {}); return; }
+  const x = byKey.get(keys[0]);
+  const prev = keys.length === 1 ? store.decisions[keys[0]] : null;
+  const base = prev && prev.action === action ? prev : {};
+  formOpen = { action, ...defaultsFor(action, x, keys), ...base, ...preset };
+  renderDetail();
+  setTimeout(() => ($('.form [data-first]') || $('.form textarea, .form input:not([type=radio]), .form select'))?.focus(), 0);
+}
+function defaultsFor(action, x, keys) {
+  const v = x?.verdict || {};
+  if (action === 'duplicate') return { of: keys.length === 1 ? (v.duplicateOf || x.dupOf || '') : '' };
+  if (action === 'needs-repro') return { text: DEFAULT_TEXT['needs-repro'] };
+  if (action === 'nudge') return { text: DEFAULT_TEXT.nudge };
+  if (action === 'close') return { reason: 'not planned', text: x?.idle > 180 ? (x.kind === 'pr' ? DEFAULT_TEXT.stalePR : DEFAULT_TEXT.stale) : '' };
+  if (action === 'merge') return { method: 'squash' };
+  return {};
+}
+function acceptSuggestion(x) {
+  const v = x.verdict || {};
+  if (v.action === 'review' && x.kind === 'pr') { window.open(safeUrl(x.url) + '/files', '_blank', 'noopener,noreferrer'); return; }
+  const s = SUGGEST[v.action];
+  if (!s) { toast('No suggestion to accept here'); return; }
+  const [action, fields] = s(x, v);
+  if (!ACTIONS[x.kind][action]) return;
+  selection.clear();
+  if (!NEEDS_FORM.has(action)) { queue([x.key], action, fields); return; }
+  startAction(action, fields);
+}
+function formEl(keys) {
+  const f = formOpen;
+  const a = f.action;
+  const many = keys.length > 1;
+  const x = byKey.get(keys[0]);
+  const field = (label, input) => h('label', {}, label, input);
+  const ta = (name, ph, first) => { const t = h('textarea', { name, 'data-first': first || null, placeholder: ph, dir: 'auto' }); t.value = f[name] || ''; t.oninput = () => (f[name] = t.value); return t; };
+  const body = [];
+  const title = { close: x.kind === 'pr' ? 'Close pull request' : 'Close issue', duplicate: 'Close as duplicate', comment: 'Comment', 'needs-repro': 'Ask for a reproduction', label: 'Edit labels', approve: 'Approve pull request', merge: 'Merge pull request', nudge: 'Nudge the author' }[a];
+  if (a === 'close' && x.kind === 'issue') {
+    const seg = h('div', { class: 'seg', role: 'radiogroup', 'aria-label': 'Reason' }, [['not planned', 'Not planned'], ['completed', 'Completed']].map(([val, lab]) => { const r = h('input', { type: 'radio', name: 'reason', value: val }); r.checked = (f.reason || 'not planned') === val; r.onchange = () => (f.reason = val); return h('label', {}, r, lab); }));
+    body.push(h('div', { class: 'row2' }, seg));
+  }
+  if (a === 'duplicate') {
+    const n = h('input', { type: 'number', name: 'of', min: 1, 'data-first': '', placeholder: 'e.g. 1234', style: 'width:140px' }); n.value = f.of || ''; n.oninput = () => (f.of = n.value);
+    body.push(field('Duplicate of issue #', n));
+  }
+  if (a === 'merge') {
+    const s = h('select', { name: 'method', 'data-first': '' }, [['squash', 'Squash and merge'], ['merge', 'Merge commit'], ['rebase', 'Rebase and merge']].map(([val, lab]) => h('option', { value: val, text: lab, selected: f.method === val })));
+    s.onchange = () => (f.method = s.value);
+    body.push(field('Method', s));
+    if (x.checks === 'FAILURE' || x.mergeable === 'CONFLICTING') body.push(h('div', { style: 'color:var(--urgent);font-size:13px', text: `Heads up: checks ${String(x.checks).toLowerCase()}, mergeable ${String(x.mergeable).toLowerCase()}.` }));
+  }
+  if (a === 'label') {
+    const dl = h('datalist', { id: 'labels-dl' }, (D.repoLabels || []).map((l) => h('option', { value: l })));
+    const add = h('input', { type: 'text', name: 'add', list: 'labels-dl', 'data-first': '', placeholder: 'bug, needs-repro' }); add.value = (f.add || []).join(', '); add.oninput = () => (f.add = add.value.split(',').map((s) => s.trim()).filter(Boolean));
+    const rem = h('input', { type: 'text', name: 'remove', list: 'labels-dl', placeholder: 'question' }); rem.value = (f.remove || []).join(', '); rem.oninput = () => (f.remove = rem.value.split(',').map((s) => s.trim()).filter(Boolean));
+    body.push(dl, h('div', { class: 'row2' }, field('Add labels (comma-separated)', add), field('Remove labels', rem)));
+  }
+  if (['close', 'duplicate'].includes(a)) body.push(field('Closing comment (optional)', ta('text', a === 'duplicate' ? 'Added after “Duplicate of #…”' : 'Leave empty to close without a comment', a === 'close' && x.kind === 'pr')));
+  if (['comment', 'needs-repro', 'nudge'].includes(a)) body.push(field(a === 'comment' ? 'Comment' : 'Message', ta('text', a === 'comment' ? 'What should the comment say? Or leave a note below and let Claude draft it.' : '', true)));
+  if (a === 'approve') body.push(field('Review message (optional)', ta('text', 'LGTM, thanks!', true)));
+  body.push(field('Note to Claude (optional)', ta('note', 'e.g. “check it isn’t fixed in the latest release first” or “draft a kinder reply that links the docs”')));
+  const submit = () => {
+    // Read straight from the fields so nothing typed is lost, however it got there.
+    el.querySelectorAll('[name]').forEach((inp) => {
+      if (inp.type === 'radio') { if (inp.checked) f[inp.name] = inp.value; return; }
+      f[inp.name] = inp.name === 'add' || inp.name === 'remove' ? inp.value.split(',').map((s) => s.trim()).filter(Boolean) : inp.value;
+    });
+    if (a === 'duplicate' && !(Number(f.of) > 0)) { toast('Enter the issue number to keep'); return; }
+    if (a === 'comment' && !(f.text || '').trim() && !(f.note || '').trim()) { toast('Write the comment, or a note asking Claude to draft it'); return; }
+    if (a === 'label' && !(f.add?.length || f.remove?.length)) { toast('Name at least one label'); return; }
+    const { action, ...fields } = f;
+    if (fields.of) fields.of = Number(fields.of);
+    if (a === 'comment' && !(fields.text || '').trim()) { fields.text = ''; fields.needsDraft = true; }
+    formOpen = null;
+    queue(keys, action, fields);
+  };
+  const el = h('div', { class: 'form', onkeydown: (e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(); } if (e.key === 'Escape') { e.preventDefault(); formOpen = null; renderDetail(); $('#list').focus(); } } },
+    h('h5', { text: many ? `${title} · ${keys.length} items` : title }), body,
+    h('div', { class: 'foot' }, h('span', { class: 'hint' }, 'Queued for Claude to apply after you confirm · ', h('kbd', { text: 'ctrl' }), ' ', h('kbd', { text: 'enter' })), h('button', { class: 'btn ghost', onclick: () => { formOpen = null; renderDetail(); } }, 'Cancel'), h('button', { class: 'btn primary', onclick: submit }, many ? `Queue for ${keys.length}` : `Queue ${title.toLowerCase()}`)));
+  return el;
+}
+
+// ---------- reading views ----------
+function renderBrief() {
+  const pane = $('#reading');
+  pane.textContent = '';
+  const b = D.brief || {};
+  const eff = ITEMS.map(effective);
+  const n = (id) => eff.filter(V[id].test).length;
+  const tile = (id, label, color) => h('button', { class: 'tile', onclick: () => go(id) }, h('b', { style: `color:${color}`, text: fmt(id === 'dupes' ? D.clusters.length : n(id)) }), h('span', { text: label }));
+  const wrap = h('div', { class: 'wrap' },
+    h('div', { class: 'dkicker', text: `${fmt(D.repo.totals?.openIssues)} open issues · ${fmt(D.repo.totals?.openPRs)} open PRs · fetched ${ago(daysSince(D.repo.fetchedAt))} ago${D.repo.partial ? ` · analysed the ${fmt(D.repo.fetched.issues)} most recently active issues` : ''}` }),
+    b.headline ? h('p', { class: 'hero', dir: 'auto', text: b.headline }) : h('p', { class: 'hero', style: 'color:var(--muted)', text: 'Scores only: no written brief yet. Ask Claude to finish the triage to add a headline, themes and suggested actions.' }),
+    h('div', { class: 'tiles' }, tile('urgent', 'urgent issues', 'var(--urgent)'), tile('wanted', 'most-wanted requests', 'var(--wanted)'), tile('prs', 'PRs to review', 'var(--review)'), tile('dupes', 'duplicate groups', 'var(--info)'), tile('noise', 'noise', 'var(--noise)')),
+    b.notes?.length ? [h('div', { class: 'h2', text: 'Worth knowing' }), h('ul', { class: 'notes' }, b.notes.map((t) => h('li', { dir: 'auto', text: t })))] : null,
+    themes.length ? [h('div', { class: 'h2', text: 'Themes' }), h('div', { class: 'themes' }, themes.map((t, i) => h('button', { class: 'theme', onclick: () => { state.theme = i; state.view = 'all'; render(); } }, h('b', { dir: 'auto', text: t.title }), h('span', { dir: 'auto', text: t.summary || '' }), h('span', { class: 'refs', text: (t.items || []).slice(0, 8).map((r) => '#' + String(r).replace(/\D/g, '')).join('  ') }))))] : null,
+    h('div', { class: 'h2', text: 'How to use this' }),
+    h('ul', { class: 'notes' }, h('li', {}, 'Open a list, move with ', h('kbd', { text: 'j' }), ' ', h('kbd', { text: 'k' }), ', and queue actions with one key: ', h('kbd', { text: 'y' }), ' accepts Claude’s suggestion, ', h('kbd', { text: 'c' }), ' closes, ', h('kbd', { text: 'd' }), ' marks a duplicate, ', h('kbd', { text: 's' }), ' keeps something marked as noise.'),
+      h('li', { text: 'Select several with x to act on all of them at once.' }),
+      h('li', {}, 'Nothing changes on GitHub from this page. When you’re done, run ', h('code', { text: `/sift:apply ${slug}` }), ' in Claude Code: it shows every command and waits for your yes.')));
+  pane.append(wrap);
+}
+const cmdPreview = (d) => {
+  const R = `-R ${slug}`; const n = d.number; const t = (d.text || '').trim(); const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+  switch (d.action) {
+    case 'close': return d.kind === 'pr' ? `gh pr close ${n} ${R}${t ? ` --comment ${q(t)}` : ''}` : `gh issue close ${n} ${R} --reason ${q(d.reason || 'not planned')}${t ? ` --comment ${q(t)}` : ''}`;
+    case 'duplicate': return `gh issue close ${n} ${R} --reason 'not planned' --comment ${q(`Duplicate of #${d.of}${t ? '\n\n' + t : ''}`)}`;
+    case 'comment': return d.needsDraft && !t ? '(Claude drafts this comment from your note; you approve it before it is sent)' : `gh ${d.kind === 'pr' ? 'pr' : 'issue'} comment ${n} ${R} --body ${q(t)}`;
+    case 'needs-repro': return `gh issue comment ${n} ${R} --body ${q(t || DEFAULT_TEXT['needs-repro'])}`;
+    case 'nudge': return `gh pr comment ${n} ${R} --body ${q(t || DEFAULT_TEXT.nudge)}`;
+    case 'label': return `gh ${d.kind === 'pr' ? 'pr' : 'issue'} edit ${n} ${R}${d.add?.length ? ` --add-label ${q(d.add.join(','))}` : ''}${d.remove?.length ? ` --remove-label ${q(d.remove.join(','))}` : ''}`;
+    case 'merge': return `gh pr merge ${n} ${R} --${d.method || 'squash'}`;
+    case 'approve': return `gh pr review ${n} ${R} --approve${t ? ` --body ${q(t)}` : ''}`;
+    default: return '(report only, no GitHub change)';
+  }
+};
+function promptForClaude() {
+  const pend = Object.entries(store.decisions).filter(([, d]) => d.status === 'pending');
+  if (mode === 'server') return `/sift:apply ${slug}`;
+  return `/sift:apply ${slug}\n\nMy decisions were made offline; save this as sift/${D.dir}/decisions.json first:\n${JSON.stringify({ repo: slug, instructions: store.instructions, decisions: Object.fromEntries(pend) }, null, 2)}`;
+}
+function renderQueue() {
+  const pane = $('#reading');
+  pane.textContent = '';
+  const entries = Object.entries(store.decisions).sort((a, b) => (a[1].status === 'pending' ? 0 : 1) - (b[1].status === 'pending' ? 0 : 1) || String(b[1].at).localeCompare(String(a[1].at)));
+  const pend = entries.filter(([, d]) => d.status === 'pending');
+  const gh = pend.filter(([, d]) => !LOCAL_ONLY.has(d.action)).length;
+  const instr = h('textarea', { class: 'instr', dir: 'auto', placeholder: 'Instructions for Claude for this whole batch, e.g. “Before closing anything as stale, check it isn’t still reproducible on the latest release. Keep a friendly tone and link the docs where it helps.”' });
+  instr.value = store.instructions || '';
+  instr.oninput = () => { store.instructions = instr.value; persist(); };
+  const wrap = h('div', { class: 'wrap' },
+    h('h2', { style: 'margin:0 0 4px;font-size:20px', text: 'Queue' }),
+    h('div', { style: 'color:var(--muted)', text: pend.length ? `${pend.length} pending · ${gh} will change GitHub · ${pend.length - gh} only change this report` : 'Nothing queued yet. Open a list and press y, c, d, s… on an item.' }),
+    h('div', { class: 'handoff' }, h('p', {}, mode === 'server' ? 'Saved to ' : 'Saved in this browser only. ', mode === 'server' ? h('code', { text: `sift/${D.dir}/decisions.json` }) : 'Copy the prompt below so Claude gets your decisions too.', '. In Claude Code, run the command: Claude shows every change and waits for your yes before anything is sent to GitHub.'),
+      h('code', { text: `/sift:apply ${slug}` }),
+      h('button', { class: 'btn primary', disabled: pend.length ? null : true, onclick: () => copy(promptForClaude(), 'Copied: paste it into Claude Code') }, 'Copy for Claude'),
+      h('button', { class: 'btn', disabled: entries.length ? null : true, onclick: download }, 'Download JSON')),
+    h('div', { class: 'h2', text: 'Instructions for Claude' }), instr,
+    entries.length ? [h('div', { class: 'h2', text: 'Actions' }), h('table', { class: 'qtable' },
+      h('thead', {}, h('tr', {}, h('th', { text: 'Item' }), h('th', { text: 'Action' }), h('th', { text: 'Status' }), h('th', { text: '' }))),
+      h('tbody', {}, entries.map(([k, d]) => {
+        const x = byKey.get(k);
+        return h('tr', {},
+          h('td', { class: 't' }, h('a', { href: '#', onclick: (e) => { e.preventDefault(); state.view = 'all'; state.q = ''; render(); select(k); }, dir: 'auto' }, h('span', { class: 'mono', style: 'color:var(--faint);margin-inline-end:6px', text: (d.kind === 'pr' ? '!' : '#') + d.number }), x?.title || d.title || '')),
+          h('td', {}, h('div', { text: `${ACTIONS[d.kind]?.[d.action] || d.action}${d.of ? ` of #${d.of}` : ''}` }), h('div', { class: 'cmd', text: cmdPreview(d) }), d.note ? h('div', { class: 'note', text: `Note: ${d.note}` }) : null),
+          h('td', {}, h('span', { class: 'tag' + (d.status === 'done' ? ' done' : d.status === 'failed' ? ' failed' : ''), text: d.status }), d.result ? h('div', { class: 'cmd', text: d.result }) : null),
+          h('td', {}, d.status === 'pending' ? h('button', { class: 'btn ghost danger', onclick: () => { delete store.decisions[k]; persist(); renderQueue(); counts(); } }, 'Remove') : null));
+      })))] : null);
+  pane.append(wrap);
+}
+function download() {
+  const blob = new Blob([JSON.stringify({ repo: slug, instructions: store.instructions, decisions: store.decisions }, null, 2)], { type: 'application/json' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: 'decisions.json' });
+  document.body.append(a); a.click(); a.remove();
+}
+
+// ---------- render ----------
+function syncNav() { navBtns.forEach((b, id) => b.setAttribute('aria-current', String(id === state.view))); }
+function render() {
+  const v = V[state.view];
+  syncNav();
+  counts();
+  updateCount();
+  $('#main').classList.toggle('reading', !!v.reading);
+  $('#reading').hidden = !v.reading;
+  document.querySelector('.listpane').hidden = !!v.reading;
+  $('#detail').hidden = !!v.reading;
+  if (v.reading) { state.view === 'brief' ? renderBrief() : renderQueue(); writeHash(); return; }
+  renderFilters();
+  renderList();
+  if (state.id && !listCache.some((x) => x.key === state.id) && !byKey.has(state.id)) state.id = null;
+  if (!state.id && listCache.length) state.id = listCache[0].key;
+  if (state.id) { const r = $('#r-' + CSS.escape(state.id)); if (r) { r.setAttribute('aria-selected', 'true'); r.scrollIntoView({ block: 'nearest' }); } }
+  renderDetail();
+  writeHash();
+}
+
+// ---------- toast & copy ----------
+let toastTimer;
+function toast(text, actionLabel, onAction) {
+  const t = $('#toast');
+  t.textContent = '';
+  t.append(h('span', { text }));
+  if (actionLabel) { const b = h('button', { class: 'btn', style: 'pointer-events:auto;min-height:24px;padding:2px 8px', onclick: () => { onAction(); t.classList.remove('on'); } }, actionLabel); t.append(b); }
+  t.style.pointerEvents = actionLabel ? 'auto' : 'none';
+  t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), actionLabel ? 4500 : 1800);
+}
+async function copy(text, msg = 'Copied') {
+  try { await navigator.clipboard.writeText(text); } catch { const t = h('textarea'); t.value = text; document.body.append(t); t.select(); document.execCommand('copy'); t.remove(); }
+  toast(msg);
+}
+
+// ---------- keyboard ----------
+const helpDlg = $('#helpDlg');
+$('#help').onclick = () => helpDlg.showModal();
+$('#helpClose').onclick = () => helpDlg.close();
+$('#queueBtn').onclick = () => go('queue');
+$('#q').addEventListener('input', (e) => { state.q = e.target.value; state.limit = 120; if (V[state.view].reading) state.view = 'all'; render(); });
+$('#q').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.target.value = ''; state.q = ''; render(); $('#list').focus(); } if (e.key === 'Enter' || e.key === 'ArrowDown') { e.preventDefault(); $('#list').focus(); move(0); } });
+$('#sort').onchange = (e) => { state.sort = e.target.value; render(); };
+document.addEventListener('keydown', (e) => {
+  const tag = (e.target.tagName || '').toLowerCase();
+  if (['input', 'textarea', 'select'].includes(tag) || e.metaKey || e.ctrlKey || e.altKey || helpDlg.open) return;
+  const k = e.key;
+  const listView = !V[state.view].reading;
+  if (k === '/') { e.preventDefault(); $('#q').focus(); $('#q').select(); return; }
+  if (k === '?') { helpDlg.showModal(); return; }
+  if (k === 't') { toggleTheme(); return; }
+  if (k === 'q') { go('queue'); return; }
+  if (/^[1-9]$/.test(k)) { go(VIEWS[Number(k) - 1].id); return; }
+  if (k === 'Escape') { if (formOpen) { formOpen = null; renderDetail(); } else if (selection.size) { selection.clear(); render(); } else $('#main').classList.remove('detail-open'); return; }
+  if (!listView) return;
+  if (k === 'j' || k === 'ArrowDown') { e.preventDefault(); move(1); return; }
+  if (k === 'k' || k === 'ArrowUp') { e.preventDefault(); move(-1); return; }
+  if (k === 'o' && state.id) { const x = byKey.get(state.id); if (x) window.open(safeUrl(x.url), '_blank', 'noopener,noreferrer'); return; }
+  if (k === 'x' && state.id) { toggleSel(state.id); return; }
+  if (k === 'X') { listCache.slice(0, state.limit).forEach((x) => selection.add(x.key)); render(); return; }
+  if (k === 'z' && state.id) { unqueue(state.id); return; }
+  if (k === 'y' && state.id) { e.preventDefault(); acceptSuggestion(byKey.get(state.id)); return; }
+  if (KEYMAP[k]) { e.preventDefault(); startAction(KEYMAP[k]); }
+});
+
+// ---------- start ----------
+$('#repo').textContent = slug;
+$('#repo').href = safeUrl(D.repo.url);
+document.title = `Sift · ${slug}`;
+readHash();
+$('#q').value = state.q;
+loadStore().then(() => { render(); if (state.id && !V[state.view].reading) select(state.id); });
+addEventListener('hashchange', () => { readHash(); render(); });
+})();
+</script>
+</body>
+</html>

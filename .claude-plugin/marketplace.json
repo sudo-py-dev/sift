@@ -1,0 +1,13 @@
+{
+  "name": "sift",
+  "owner": { "name": "sudo-py-dev", "url": "https://github.com/sudo-py-dev" },
+  "metadata": { "description": "Sift: a signal-vs-noise triage inbox for GitHub issues and PRs, for Claude Code." },
+  "plugins": [
+    {
+      "name": "sift",
+      "source": "./",
+      "description": "Triage a GitHub repo's issues and PRs in a keyboard-first inbox, queue actions, and let Claude apply them after you confirm.",
+      "category": "productivity"
+    }
+  ]
+}

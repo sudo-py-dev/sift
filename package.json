@@ -1,0 +1,9 @@
+{
+  "name": "sift",
+  "private": true,
+  "description": "Sift, a Claude Code plugin. No dependencies: this file only gives `npm test` a home.",
+  "license": "MIT",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": { "test": "node --test" }
+}

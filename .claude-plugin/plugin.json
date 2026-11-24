@@ -1,0 +1,10 @@
+{
+  "name": "sift",
+  "version": "0.2.0",
+  "description": "Sift the signal from the noise in big GitHub repos. A keyboard-first triage inbox for issues and PRs: urgent bugs, most-wanted requests, PRs waiting on review, duplicates and noise, each with Claude's verdict. Queue actions in the inbox (close, mark duplicate, comment, label, merge) and Claude applies them after you confirm.",
+  "author": { "name": "sudo-py-dev", "url": "https://github.com/sudo-py-dev" },
+  "homepage": "https://github.com/sudo-py-dev/sift",
+  "repository": "https://github.com/sudo-py-dev/sift",
+  "license": "MIT",
+  "keywords": ["github", "issues", "pull-requests", "triage", "backlog", "maintainers", "open-source", "duplicates", "inbox"]
+}
