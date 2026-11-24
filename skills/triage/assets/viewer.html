@@ -671,14 +671,16 @@ function effective(x) {
 // ---------- views ----------
 // Signals the views and the overview read. Scores and signals come from scoring.mjs; verdicts from Claude.
 const sigOf = (x, re) => x.signals.find((s) => re.test(s.t));
-const UNANSWERED = /^no (maintainer|recent team) reply$/;
-const daysIn = (s) => Number((/(\d+) days?/.exec(s?.t || '') || [])[1] || 0);
-const waitDays = (x) => daysIn(sigOf(x, /^contributor waiting/));
+// Membership comes from plain state the scorer exports, not from signal text (signals have thresholds and
+// "N days" turns into "N months"). Reports built before these fields existed fall back to the signals.
+const UNANSWERED_SIG = /^no (maintainer|recent team) reply$/;
+const noTeamReply = (x) => x.kind === 'issue' && (x.unanswered ?? !!sigOf(x, UNANSWERED_SIG));
+const isWaiting = (x) => x.kind === 'pr' && x.status === 'unreviewed' && (x.external ?? !!sigOf(x, /^contributor waiting/));
+const waitDays = (x) => (isWaiting(x) ? x.age : 0);
 const CLOSE_ACTIONS = new Set(['close-duplicate', 'close-stale', 'close-not-planned', 'close-completed', 'close']);
 const QUICK_ACTIONS = new Set([...CLOSE_ACTIONS, 'needs-repro', 'nudge-author', 'merge']);
 const isQuick = (x) => QUICK_ACTIONS.has(x.verdict?.action) && !(x.verdict.action === 'merge' && x.status !== 'ready');
-const isUnanswered = (x) => x.kind === 'issue' && x.bucket !== 'noise' && !!sigOf(x, UNANSWERED) && !CLOSE_ACTIONS.has(x.verdict?.action);
-const isWaiting = (x) => x.kind === 'pr' && x.status !== 'draft' && !!sigOf(x, /^contributor waiting/);
+const isUnanswered = (x) => x.bucket !== 'noise' && noTeamReply(x) && !CLOSE_ACTIONS.has(x.verdict?.action);
 const VIEWS = [
   { id: 'brief', ic: 'overview', name: 'Overview', color: 'var(--accent)', reading: true },
   { id: 'urgent', ic: 'urgent', group: 'Needs you', name: 'Urgent issues', color: 'var(--urgent)', test: (x) => x.kind === 'issue' && x.bucket === 'attention' && x.lane === 'urgent', rank: (x) => x.urgency, sub: 'Severe, active now, or unanswered by the team' },
@@ -692,6 +694,8 @@ const VIEWS = [
   { id: 'watch', ic: 'watch', group: 'Browse', name: 'Watch', color: 'var(--faint)', test: (x) => x.bucket === 'watch', rank: (x) => x.attention, sub: 'Real, but not pressing' },
   { id: 'all', ic: 'inbox', name: 'Everything', color: 'var(--line-2)', test: () => true, rank: (x) => x.attention, sub: 'Every fetched issue and PR' },
   { id: 'queue', ic: 'queue', group: '', name: 'Queue', color: 'var(--accent)', reading: true },
+  // Opened from the overview's "Ready to merge" card; not in the sidebar. Not capped like PRs to review.
+  { id: 'ready', ic: 'merge', hidden: true, name: 'Ready to merge', color: 'var(--review)', test: (x) => x.kind === 'pr' && x.status === 'ready', rank: (x) => x.attention, sub: 'Approved, checks passing, no conflicts' },
 ];
 const V = Object.fromEntries(VIEWS.map((v) => [v.id, v]));
 const state = { view: 'brief', id: null, q: '', label: '', theme: -1, sort: 'rank', limit: 120 };
@@ -715,6 +719,7 @@ function writeHash() {
 
 const navBtns = new Map();
 VIEWS.forEach((v, i) => {
+  if (v.hidden) return;
   if (v.group != null) $('#nav').append(v.group ? h('div', { class: 'navh', text: v.group }) : h('div', { class: 'navsep', role: 'separator' }));
   const b = h('button', { 'data-v': v.id, onclick: () => go(v.id), title: i < 9 ? `${v.name} · ${i + 1}` : v.name }, h('span', { class: 'nic', style: `--vc:${v.color}` }, icon(v.ic)), h('span', { class: 'nt', text: v.name }), h('span', { class: 'n' }), i < 9 ? h('kbd', { text: i + 1 }) : null);
   navBtns.set(v.id, b);
@@ -727,7 +732,7 @@ function counts() {
     if (v.test) n = eff.filter(v.test).length;
     if (v.id === 'dupes') n = D.clusters.length;
     if (v.id === 'queue') n = pendingCount() || '';
-    navBtns.get(v.id).querySelector('.n').textContent = n === '' ? '' : fmt(n);
+    navBtns.get(v.id)?.querySelector('.n').replaceChildren(n === '' ? '' : fmt(n));
   }
 }
 // Themes and labels filter the current list.
@@ -1170,11 +1175,15 @@ function renderBrief() {
   const b = D.brief || {};
   const eff = ITEMS.map(effective);
   const list = (id) => eff.filter(V[id].test).sort((p, q) => V[id].rank(q) - V[id].rank(p));
-  const L = Object.fromEntries(['urgent', 'prs', 'unanswered', 'waiting', 'cleanup', 'noise'].map((id) => [id, list(id)]));
-  const open = (id, key) => { state.view = id; state.limit = 120; selection.clear(); state.id = key || null; render(); if (key) select(key); $('#list').focus({ preventScroll: true }); };
+  const L = Object.fromEntries(['urgent', 'prs', 'ready', 'unanswered', 'waiting', 'cleanup', 'noise'].map((id) => [id, list(id)]));
+  // Opening a list or an item from here starts clean: a search or filter left over from earlier
+  // could hide the item (or make the list disagree with the count on the card).
+  const open = (id, key) => {
+    state.view = id; state.limit = 120; state.q = ''; state.label = ''; state.theme = -1; $('#q').value = '';
+    selection.clear(); state.id = key || null; render(); if (key) select(key); $('#list').focus({ preventScroll: true });
+  };
   const maxOf = (arr, f) => arr.reduce((m, x) => Math.max(m, f(x)), 0);
-  const ready = eff.filter((x) => x.kind === 'pr' && x.status === 'ready').length;
-  const urgentSilent = L.urgent.filter((x) => sigOf(x, UNANSWERED)).length;
+  const urgentSilent = L.urgent.filter(noTeamReply).length;
 
   // Stat tiles: each one is a list you can open, with the fact that makes it matter.
   const stat = (id, value, label, caption, tone) => h('button', { class: `stat ${tone}`, onclick: () => open(id) },
@@ -1184,7 +1193,7 @@ function renderBrief() {
     stat('urgent', L.urgent.length, 'Urgent issues', urgentSilent ? `${urgentSilent} with no team reply` : 'all have a team reply', 'urgent'),
     stat('unanswered', L.unanswered.length, 'No team reply', L.unanswered.length ? `oldest waiting ${ago(maxOf(L.unanswered, (x) => x.age))}` : 'every issue has an answer', 'urgent'),
     stat('waiting', L.waiting.length, 'Contributors waiting', L.waiting.length ? `longest wait ${ago(maxOf(L.waiting, waitDays))}` : 'no one is waiting', 'review'),
-    stat('prs', ready, 'Ready to merge', 'approved, green, no conflicts', 'review'),
+    stat('ready', L.ready.length, 'Ready to merge', 'approved, green, no conflicts', 'review'),
     stat('cleanup', L.cleanup.length, 'Quick wins', 'closes and replies Claude prepared', 'info'),
     stat('noise', L.noise.length, 'Noise', `${Math.round((100 * L.noise.length) / Math.max(1, ITEMS.length))}% of what was fetched`, 'noise'));
 
@@ -1192,7 +1201,7 @@ function renderBrief() {
   const agendaRow = (x, id) => {
     const warn = x.kind === 'pr'
       ? (x.status === 'ready' ? 'ready to merge' : waitDays(x) ? `waiting ${ago(waitDays(x))}` : x.status)
-      : sigOf(x, UNANSWERED) ? `no team reply · ${ago(x.age)}` : (x.signals.find((s) => s.tone === 'warn' || s.tone === 'hot')?.t || '');
+      : noTeamReply(x) ? `no team reply · ${ago(x.age)}` : (x.signals.find((s) => s.tone === 'warn' || s.tone === 'hot')?.t || '');
     return h('button', { class: 'ag', onclick: () => open(id, x.key) },
       h('span', { class: 'ag-n mono', text: (x.kind === 'pr' ? '!' : '#') + x.number }),
       h('span', { class: 'ag-b' },
