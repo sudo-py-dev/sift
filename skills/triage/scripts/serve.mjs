@@ -51,14 +51,28 @@ function trusted(req) {
   return true;
 }
 
+const FAVICON = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E%3Crect width='1024' height='1024' rx='224' fill='%231b1b1a'/%3E%3Cg transform='translate(170 200)'%3E%3Crect width='534' height='93' rx='46.5' fill='%23f87171'/%3E%3Crect y='130' width='425' height='93' rx='46.5' fill='%23fb923c'/%3E%3Crect y='260' width='329' height='93' rx='46.5' fill='%234ade80'/%3E%3Crect y='390' width='206' height='93' rx='46.5' fill='%23a3a19a'/%3E%3Crect y='520' width='151' height='93' rx='46.5' fill='%23a3a19a'/%3E%3C/g%3E%3C/svg%3E";
+const MARK = '<svg class="logo" width="26" height="30" viewBox="0 0 534 613" aria-hidden="true"><rect width="534" height="93" rx="46.5" fill="#f87171"/><rect y="130" width="425" height="93" rx="46.5" fill="#fb923c"/><rect y="260" width="329" height="93" rx="46.5" fill="#4ade80"/><rect y="390" width="206" height="93" rx="46.5" fill="#a3a19a"/><rect y="520" width="151" height="93" rx="46.5" fill="#a3a19a"/></svg>';
+
 function listReports() {
   const dirs = fs.readdirSync(root).filter((d) => SLUG.test(d) && fs.existsSync(path.join(root, d, 'index.html')));
   const rows = dirs.map((d) => {
     const meta = readJSON(path.join(root, d, '.cache', 'meta.json'), {});
     const name = (meta.repo || d.replace('__', '/')).replace(/[<>&"]/g, '');
-    return `<li><a href="/${encodeURIComponent(d)}/">${name}</a> <span>${meta.fetchedAt ? new Date(meta.fetchedAt).toLocaleString() : ''}</span></li>`;
+    return `<li><a href="/${encodeURIComponent(d)}/"><b>${name}</b><span>${meta.fetchedAt ? `fetched ${new Date(meta.fetchedAt).toLocaleString()}` : ''}</span></a></li>`;
   });
-  return `<!doctype html><meta charset="utf-8"><title>Sift</title><style>body{font:16px system-ui;background:#111113;color:#e8e8ea;max-width:640px;margin:80px auto;padding:0 24px}a{color:#a5b4fc}span{color:#8b8b93;font-size:13px;margin-left:8px}li{margin:10px 0}</style><h1>Sift</h1>${rows.length ? `<ul>${rows.join('')}</ul>` : '<p>No reports yet. Ask Claude to triage a repository.</p>'}`;
+  // Brand: tokens, mark and favicon match BRAND.md and the inbox (viewer.html).
+  return `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sift</title>`
+    + `<link rel="icon" href="${FAVICON}"><meta name="theme-color" content="#1b1b1a">`
+    + `<style>:root{--bg:#131312;--surface:#1b1b1a;--surface-2:#222220;--line:rgba(255,255,255,.065);--text:#ecebe6;--muted:#a3a19a;--faint:#8b8982;--accent:#8e8cff;color-scheme:dark}`
+    + `@media (prefers-color-scheme:light){:root{--bg:#f6f5f2;--surface:#fff;--surface-2:#faf9f7;--line:rgba(27,27,26,.08);--text:#1b1b1a;--muted:#57554f;--faint:#6c6963;--accent:#5552e8;color-scheme:light}}`
+    + `body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 Inter,"SF Pro Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}`
+    + `main{max-width:640px;margin:72px auto;padding:0 24px}header{display:flex;align-items:center;gap:12px;margin-bottom:6px}h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.02em}`
+    + `p{color:var(--muted);margin:0 0 24px}ul{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}`
+    + `li + li{border-top:1px solid var(--line)}a{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding:14px 18px;color:inherit;text-decoration:none}a:hover{background:var(--surface-2)}`
+    + `a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}b{font-weight:600}span{color:var(--faint);font-size:12.5px;white-space:nowrap}</style>`
+    + `<main><header>${MARK}<h1>Sift</h1></header><p>Triage inboxes on this machine. Nothing here changes GitHub until you confirm in Claude Code.</p>`
+    + `${rows.length ? `<ul>${rows.join('')}</ul>` : '<p>No reports yet. Ask Claude to triage a repository.</p>'}</main></html>`;
 }
 
 const server = http.createServer(async (req, res) => {
