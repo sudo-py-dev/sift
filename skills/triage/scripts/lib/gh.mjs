@@ -48,6 +48,7 @@ function run(input) {
       if (err) { err.stderr = stderr; return reject(err); }
       resolve(stdout);
     });
+    child.stdin.on('error', () => {}); // gh may exit before reading (bad sign-in): report its error, not EPIPE
     child.stdin.end(input);
   });
 }
@@ -85,14 +86,21 @@ export async function graphql(query, variables = {}, { retries = 4 } = {}) {
 export async function repoInfo(owner, name) {
   const d = await graphql(
     `query($o:String!,$n:String!){ rateLimit{remaining resetAt}
-      repository(owner:$o,name:$n){ nameWithOwner description url stargazerCount isArchived createdAt
-        hasDiscussionsEnabled
+      repository(owner:$o,name:$n){ nameWithOwner description url stargazerCount isArchived isPrivate createdAt
+        hasDiscussionsEnabled viewerPermission
         openIssues: issues(states:OPEN){totalCount}
         openPRs: pullRequests(states:OPEN){totalCount}
         labels(first:100){ nodes{ name description } } } }`,
     { o: owner, n: name },
   );
   return d.repository;
+}
+
+/** The signed-in user's live role on a repository (see lib/permissions.mjs). */
+export async function viewerAccess(owner, name) {
+  const d = await graphql(`query($o:String!,$n:String!){ repository(owner:$o,name:$n){ viewerPermission isPrivate isArchived } }`, { o: owner, n: name }, { retries: 1 });
+  const r = d.repository;
+  return { permission: r.viewerPermission, isPrivate: r.isPrivate, archived: r.isArchived };
 }
 
 export async function searchCount(q) {

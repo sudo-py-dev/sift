@@ -60,6 +60,18 @@ Three panes: **views** on the left, a dense **ranked list** in the middle, and t
 
 Every action form has a **Note to Claude** field ("check it isn't fixed in the latest release first", "draft a kinder reply that links the docs"). The Queue view takes instructions for the whole batch.
 
+### Access
+
+Sift checks what your `gh` account may do on the repo and only offers those actions:
+
+| Your role | You can queue |
+|---|---|
+| read (any public repo) | comment, ask for a reproduction, nudge |
+| triage | the above, plus close, close as duplicate, edit labels |
+| write, maintain, admin | everything, including approve and merge |
+
+Locked actions (and Claude's suggestions that need them) show a lock in the inbox and say what access they need. The local server refuses to save them, and `/sift:apply` checks your role with GitHub again right before sending, skipping anything it no longer allows. Archived repos are read-only.
+
 ### Applying
 
 The inbox never writes to GitHub. Queued actions are saved to `sift/<owner>__<repo>/decisions.json` (through a small server bound to 127.0.0.1). `/sift:apply` then:

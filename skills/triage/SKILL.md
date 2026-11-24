@@ -69,6 +69,7 @@ The repository is the argument: `owner/repo` or a GitHub URL. If none was given 
    This starts a small local server (127.0.0.1 only, reused if it's already running) and opens the inbox. Through it, actions the user queues are saved to `decisions.json` as they work. It prints the URL. If you have an in-app browser or preview tool, pass `--no-open` and open the URL there. On a remote or headless machine, tell the user to run `node ${CLAUDE_SKILL_DIR}/scripts/serve.mjs` from this folder on a machine where they can open 127.0.0.1. Opening `index.html` as a file also works, but queued actions then stay in the browser until they copy them for Claude (the Queue view has a button for that). Stop the server with `serve.mjs --stop`.
 
 7. **Report** in a few lines, in the user's language:
+   - their access, if fetch printed `ACCESS` below write (read, triage, or none): say which actions are locked in the inbox, Claude's suggestions included, and that a maintainer has to take those;
    - the headline;
    - the 3–5 items that most need them, by number and title, with why;
    - how much is noise (count and %) and the biggest kind of noise;
