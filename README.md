@@ -7,6 +7,13 @@
 /sift:apply  astral-sh/uv      # review the queued actions and apply them
 ```
 
+**Quick install** (needs Node 18+ and `gh auth login`; full steps in [Install](#install)):
+
+```
+/plugin marketplace add sudo-py-dev/sift
+/plugin install sift@sift
+```
+
 ## The inbox
 
 Three panes: **views** on the left, a dense **ranked list** in the middle, and the **full item** on the right. The detail pane shows:
@@ -71,14 +78,107 @@ The inbox never writes to GitHub. Queued actions are saved to `sift/<owner>__<re
 
 ## Install
 
-Needs Node 18+ and the [GitHub CLI](https://cli.github.com/) signed in (`gh auth login`).
+### 1. Requirements
+
+| | Check | Get it |
+|---|---|---|
+| [Claude Code](https://claude.com/claude-code) | `claude --version` | `npm install -g @anthropic-ai/claude-code` |
+| Node.js 18 or newer | `node --version` | [nodejs.org](https://nodejs.org/) |
+| GitHub CLI, signed in | `gh auth status` | [cli.github.com](https://cli.github.com/), then `gh auth login` |
+
+Sift reads GitHub through your own `gh` sign-in, so it can see any repo you can see, private ones included. To apply actions (close, label, merge…) your account needs triage or write access to that repo.
+
+### 2. Install the plugin
+
+**Inside Claude Code**, run these one at a time:
 
 ```
 /plugin marketplace add sudo-py-dev/sift
+```
+
+```
 /plugin install sift@sift
 ```
 
-Then just ask: *"triage astral-sh/uv"*, *"what in our tracker actually needs attention?"*, *"apply my Sift queue"*.
+**Or from your terminal:**
+
+```bash
+claude plugin marketplace add sudo-py-dev/sift
+```
+
+```bash
+claude plugin install sift@sift
+```
+
+Restart Claude Code (or start a new session) so the skills load.
+
+### 3. Check it worked
+
+```bash
+claude plugin list
+```
+
+`sift@sift` should be listed as enabled. In Claude Code, typing `/sift` should suggest `/sift:triage` and `/sift:apply`.
+
+### 4. First run
+
+Open Claude Code in any folder (the report is written to `./sift/` there, with its own `.gitignore`) and run:
+
+```
+/sift:triage owner/repo
+```
+
+Or just ask in plain words: *"triage astral-sh/uv"*, *"what in our tracker actually needs attention?"*. Claude fetches, scores and judges the repo, then opens the inbox in your browser. On a big repo the first run takes a few minutes. When you've queued actions, run `/sift:apply owner/repo` or say *"apply my Sift queue"*.
+
+### Update, disable, remove
+
+```bash
+claude plugin marketplace update sift
+```
+
+```bash
+claude plugin update sift@sift
+```
+
+```bash
+claude plugin disable sift@sift
+```
+
+```bash
+claude plugin uninstall sift@sift
+```
+
+```bash
+claude plugin marketplace remove sift
+```
+
+### Install from a local clone (to hack on it)
+
+```bash
+git clone https://github.com/sudo-py-dev/sift.git
+```
+
+```bash
+claude plugin marketplace add ./sift
+```
+
+```bash
+claude plugin install sift@sift
+```
+
+Changes to the clone take effect after `claude plugin marketplace update sift` and a new session.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| “The GitHub CLI (gh) is not signed in” | Run `gh auth login`. |
+| “Repository not found” | Check the spelling, and that `gh repo view owner/repo` works for your account. |
+| Rate limit reached | Wait for the hourly reset, or fetch less with `--max 1000`. |
+| The inbox opens but actions don't save | Open it through the URL that `open.mjs` prints (`http://127.0.0.1:…`), not as a file. As a file, use **Copy for Claude** in the Queue view. |
+| Can't open the inbox on a remote machine | On a machine with a browser, run `node <plugin>/skills/triage/scripts/serve.mjs` from the folder that holds `sift/`. |
+
+### Options
 
 | Flag | Default | |
 |---|---|---|
